@@ -1,0 +1,10 @@
+# Exclude Eclipse project metadata
+.settings/
+.launch
+.project
+
+# Exclude build directory
+build/
+
+# Exclude the executable
+unit_test
