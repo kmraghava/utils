@@ -47,6 +47,7 @@ test_build_dir := $(build_dir)/test
 
 # unit test sources
 test_sources := $(test_src_dir)/tclist.c \
+                $(test_src_dir)/tmacro_args.c \
                 $(test_src_dir)/tlist.c \
                 $(test_src_dir)/unit_test.c \
                 \
