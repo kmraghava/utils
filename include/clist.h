@@ -21,8 +21,6 @@ extern "C" {
 /*****************************************************************************
  * Include Files
  *****************************************************************************/
-#include "allocator.h"
-
 
 /*****************************************************************************
  * Global Defines
@@ -58,7 +56,7 @@ typedef void (*clist_callback_f) (void *member_p);
 /*****************************************************************************
  * Global Function Prototypes
  *****************************************************************************/
-extern clist_t* clist_new (const allocator_t *allocator_p);
+extern clist_t* clist_new ();
 extern clist_t* clist_del (clist_t *ll_p);
 
 extern unsigned int clist_count (clist_t *ll_p);

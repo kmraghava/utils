@@ -23,26 +23,13 @@
         } \
     } while (0)
 
-/*
- * Dummy allocator
- */
-static void *my_malloc(size_t s) { return malloc(s); }
-static void my_free(void *p) { free(p); }
-
-static const allocator_t custom_alloc = {
-    .malloc  = my_malloc,
-    .free    = my_free,
-    .calloc  = NULL,
-    .realloc = NULL
-};
-
 
 /*
  * Test 1: Create/Delete
  */
 int test_create_delete()
 {
-    clist_t *ll = clist_new(&custom_alloc);
+    clist_t *ll = clist_new();
     ASSERT_TRUE(ll != NULL);
     ASSERT_EQ(clist_count(ll), 0);
     ASSERT_EQ(clist_empty(ll), 1);
@@ -57,7 +44,7 @@ int test_create_delete()
  */
 int test_push_front_back()
 {
-    clist_t *ll = clist_new(&custom_alloc);
+    clist_t *ll = clist_new();
 
     clist_push_back(ll, (void*)10);
     clist_push_front(ll, (void*)20);
@@ -83,7 +70,7 @@ int test_push_front_back()
  */
 int test_insert_at()
 {
-    clist_t *ll = clist_new(&custom_alloc);
+    clist_t *ll = clist_new();
 
     clist_insert_at(ll, 0, (void*)100);  // [100]
     clist_insert_at(ll, 1, (void*)200);  // [100,200]
@@ -105,7 +92,7 @@ int test_insert_at()
  */
 int test_traversal()
 {
-    clist_t *ll = clist_new(&custom_alloc);
+    clist_t *ll = clist_new();
 
     for (long i = 1; i <= 5; i++)
         clist_push_back(ll, (void*)i);
@@ -132,7 +119,7 @@ int test_traversal()
  */
 int test_remove()
 {
-    clist_t *ll = clist_new(&custom_alloc);
+    clist_t *ll = clist_new();
 
     clist_push_back(ll, (void*)10);
     clist_push_back(ll, (void*)20);
@@ -160,7 +147,7 @@ int test_remove()
  */
 int test_clear()
 {
-    clist_t *ll = clist_new(&custom_alloc);
+    clist_t *ll = clist_new();
 
     for (long i = 0; i < 10; i++)
         clist_push_back(ll, (void*)i);

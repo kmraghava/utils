@@ -14,7 +14,6 @@
 /*****************************************************************************
    Include Files
 *****************************************************************************/
-#include "allocator.h"
 #include "clist.h"
 #include <stdlib.h>
 
@@ -51,8 +50,6 @@ struct clist_node_s
 
 struct clist_s
 {
-    allocator_t    allocator;
-
     clist_node_t   head,
                    tail;
 
@@ -71,15 +68,6 @@ struct clist_s
 /*****************************************************************************
    Local Macros
 ******************************************************************************/
-#define clist_malloc(ll_p, size)  ll_p->allocator.malloc(size)
-#define clist_free(ll_p, ptr)                \
-    do                                       \
-    {                                        \
-        free_f  ffn = ll_p->allocator.free;  \
-        ffn(ptr);                            \
-    }                                        \
-    while (0)
-
 
 /*****************************************************************************
    Local Function Prototypes
@@ -104,7 +92,7 @@ static clist_node_t* clist_node_new (clist_t *ll_p, void *member_p);
  *****************************************************************************/
 static clist_node_t* clist_node_new (clist_t *ll_p, void *member_p)
 {
-    clist_node_t  *nn_p = clist_malloc(ll_p, sizeof(clist_node_t));
+    clist_node_t  *nn_p = malloc(sizeof(clist_node_t));
 
     if (nn_p)
     {
@@ -129,41 +117,19 @@ static clist_node_t* clist_node_new (clist_t *ll_p, void *member_p)
  *
  *  DESCRIPTION : Creates a new container list
  *
- *  PARAMS      : allocator_p - Allocator
+ *  PARAMS      : void
  *
  *  RETURNS     : Container list
  *
  *****************************************************************************/
-clist_t* clist_new (const allocator_t *allocator_p)
+clist_t* clist_new (void)
 {
     clist_t   *ll_p = NULL;
 
-    malloc_f   mfn;
-    free_f     ffn;
-
-    if (   allocator_p
-        && allocator_p->malloc
-        && allocator_p->free
-       )
-    {
-        mfn = allocator_p->malloc;
-        ffn = allocator_p->free;
-    }
-    else
-    {
-        mfn = malloc;
-        ffn = free;
-    }
-
-    ll_p = mfn(sizeof(clist_t));
+    ll_p = malloc(sizeof(clist_t));
 
     if (ll_p)
     {
-        ll_p->allocator.malloc = mfn;
-        ll_p->allocator.free = ffn;
-        ll_p->allocator.calloc = NULL;
-        ll_p->allocator.realloc = NULL;
-
         ll_p->head.member_p = NULL;
         ll_p->head.prev = NULL;
         ll_p->head.next = &ll_p->tail;
@@ -199,7 +165,7 @@ clist_t* clist_del (clist_t *ll_p)
     {
         clist_clear(ll_p);
 
-        clist_free(ll_p, ll_p);
+        free(ll_p);
         ll_p = NULL;
     }
 
@@ -640,7 +606,7 @@ void* clist_remove (clist_iterator_t *itr_p)
 
         member_p = itr_p->node_p->member_p;
 
-        clist_free(itr_p->node_p->ll_p, itr_p->node_p);
+        free(itr_p->node_p);
     }
 
     return member_p;
