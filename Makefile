@@ -30,6 +30,7 @@ includes := -Iinclude
 sources := $(src_dir)/clist.c \
 		   $(src_dir)/json_field.c \
 		   $(src_dir)/logger.c \
+		   $(src_dir)/mac_addr.c \
 		   \
 
 # Object files
@@ -52,6 +53,7 @@ test_sources := $(test_src_dir)/tclist.c \
                 $(test_src_dir)/tjson_field.c \
                 $(test_src_dir)/tmacro_args.c \
                 $(test_src_dir)/tlist.c \
+                $(test_src_dir)/tmac_addr.c \
                 $(test_src_dir)/unit_test.c \
                 \
 
