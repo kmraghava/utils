@@ -29,6 +29,7 @@ includes := -Iinclude
 # Source files
 sources := $(src_dir)/clist.c \
 		   $(src_dir)/json_field.c \
+		   $(src_dir)/logger.c \
 		   \
 
 # Object files
