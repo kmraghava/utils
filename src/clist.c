@@ -1,34 +1,9 @@
-/*****************************************************************************
- *
- *  FILE NAME     : clist.c
- *  MODULE        : utils
- *  AUTHOR        : KM Raghava
- *  CREATION DATE : November 21, 2025
- *
- ******************************************************************************
- *
- *  DESCRIPTION : Double link list (Container)
- *
- *****************************************************************************/
 
-/*****************************************************************************
-   Include Files
-*****************************************************************************/
+#include "allocator.h"
 #include "clist.h"
 #include <stdlib.h>
 
 
-/*****************************************************************************
-   External Declarations
-*****************************************************************************/
-
-/*****************************************************************************
-   Local Constants
-*****************************************************************************/
-
-/*****************************************************************************
-   Local Types
-*****************************************************************************/
 typedef struct clist_node_s clist_node_t;
 
 struct clist_iterator_s
@@ -45,54 +20,41 @@ struct clist_node_s
 
     clist_t           *ll_p;
     clist_iterator_t   itr;
-
 };
 
 struct clist_s
 {
-    clist_node_t   head,
-                   tail;
+    allocator_t     allocator;
 
-    unsigned int   count;
+    clist_node_t    head,
+                    tail;
+
+    unsigned int    count;
+
+    member_clone_f  mclone_fn;
+    member_free_f   mfree_fn;
+    member_cmp_f    mcmp_fn;
+
+    size_t          member_size;
 };
 
 
-/*****************************************************************************
-   Local Variables
-*****************************************************************************/
+#define clist_malloc(ll_p, size)  ll_p->allocator.malloc(size)
+#define clist_free(ll_p, ptr)                \
+    do                                       \
+    {                                        \
+        free_f  ffn = ll_p->allocator.free;  \
+        ffn(ptr);                            \
+    }                                        \
+    while (0)
 
-/*****************************************************************************
-   Global Variables
-*****************************************************************************/
 
-/*****************************************************************************
-   Local Macros
-******************************************************************************/
-
-/*****************************************************************************
-   Local Function Prototypes
-*****************************************************************************/
 static clist_node_t* clist_node_new (clist_t *ll_p, void *member_p);
 
 
-/*****************************************************************************
-   Local Functions
-*****************************************************************************/
-/*****************************************************************************
- *
- *  NAME        : clist_node_new
- *
- *  DESCRIPTION : Creates a new container list node
- *
- *  PARAMS      : ll_p     - Container list
- *                member_p - Container list member
- *
- *  RETURNS     : Container list
- *
- *****************************************************************************/
 static clist_node_t* clist_node_new (clist_t *ll_p, void *member_p)
 {
-    clist_node_t  *nn_p = malloc(sizeof(clist_node_t));
+    clist_node_t  *nn_p = clist_malloc(ll_p, sizeof(clist_node_t));
 
     if (nn_p)
     {
@@ -108,28 +70,36 @@ static clist_node_t* clist_node_new (clist_t *ll_p, void *member_p)
 }
 
 
-/*****************************************************************************
-   Global Functions
-*****************************************************************************/
-/*****************************************************************************
- *
- *  NAME        : clist_new
- *
- *  DESCRIPTION : Creates a new container list
- *
- *  PARAMS      : void
- *
- *  RETURNS     : Container list
- *
- *****************************************************************************/
-clist_t* clist_new (void)
+clist_t* clist_new (const allocator_t  *allocator_p)
 {
     clist_t   *ll_p = NULL;
 
-    ll_p = malloc(sizeof(clist_t));
+    malloc_f   mfn;
+    free_f     ffn;
+
+    if (   allocator_p
+        && allocator_p->malloc
+        && allocator_p->free
+       )
+    {
+        mfn = allocator_p->malloc;
+        ffn = allocator_p->free;
+    }
+    else
+    {
+        mfn = malloc;
+        ffn = free;
+    }
+
+    ll_p = mfn(sizeof(clist_t));
 
     if (ll_p)
     {
+        ll_p->allocator.malloc = mfn;
+        ll_p->allocator.free = ffn;
+        ll_p->allocator.calloc = NULL;
+        ll_p->allocator.realloc = NULL;
+
         ll_p->head.member_p = NULL;
         ll_p->head.prev = NULL;
         ll_p->head.next = &ll_p->tail;
@@ -143,46 +113,49 @@ clist_t* clist_new (void)
         ll_p->tail.itr.node_p = &ll_p->tail;
 
         ll_p->count = 0;
+
+        ll_p->mclone_fn = member_clone;
+        ll_p->mfree_fn  = member_free;
+        ll_p->mcmp_fn   = member_cmp;
+
+        ll_p->member_size = 0;
     }
 
     return ll_p;
 }
 
-/*****************************************************************************
- *
- *  NAME        : clist_del
- *
- *  DESCRIPTION : Deletes the container list
- *
- *  PARAMS      : ll_p - Container list
- *
- *  RETURNS     : NULL
- *
- *****************************************************************************/
 clist_t* clist_del (clist_t *ll_p)
 {
     if (ll_p)
     {
         clist_clear(ll_p);
 
-        free(ll_p);
+        clist_free(ll_p, ll_p);
         ll_p = NULL;
     }
 
     return ll_p;
 }
 
-/*****************************************************************************
- *
- *  NAME        : clist_count
- *
- *  DESCRIPTION : Returns number of elements in the container list
- *
- *  PARAMS      : ll_p - Container list
- *
- *  RETURNS     : Number of elements in the container list
- *
- *****************************************************************************/
+void clist_set_member_funcs (clist_t         *ll_p,
+                             member_clone_f   mclone_fn,
+                             member_free_f    mfree_fn,
+                             member_cmp_f     mcmp_fn)
+{
+    if (ll_p)
+    {
+        if (mclone_fn)  ll_p->mclone_fn = mclone_fn;
+        if (mfree_fn)   ll_p->mfree_fn  = mfree_fn;
+        if (mcmp_fn)    ll_p->mcmp_fn   = mcmp_fn;
+    }
+}
+
+void clist_set_member_size (clist_t *ll_p, size_t member_size)
+{
+    if (ll_p)
+        ll_p->member_size = member_size;
+}
+
 unsigned int clist_count (clist_t *ll_p)
 {
     unsigned int  count = 0;
@@ -193,18 +166,6 @@ unsigned int clist_count (clist_t *ll_p)
     return count;
 }
 
-/*****************************************************************************
- *
- *  NAME        : clist_empty
- *
- *  DESCRIPTION : Checks if the container list is empty
- *
- *  PARAMS      : ll_p - Container list
- *
- *  RETURNS     : 1 if container list is empty
- *                0 otherwise
- *
- *****************************************************************************/
 int clist_empty (clist_t *ll_p)
 {
     return   clist_count(ll_p) == 0
@@ -212,66 +173,34 @@ int clist_empty (clist_t *ll_p)
            : 0;
 }
 
-/*****************************************************************************
- *
- *  NAME        : clist_push_back
- *                clist_push_front
- *
- *  DESCRIPTION : Adds an element at the back of the container list
- *
- *  PARAMS      : ll_p     - Container list
- *                member_p - member to be added
- *
- *  RETURNS     : 0 if the element was added
- *                1 otherwise
- *
- *****************************************************************************/
+int clist_push_back_new (clist_t *ll_p, void *member_p)
+{
+    return clist_insert_before_new(ll_p, clist_end(ll_p), member_p);
+}
+
 int clist_push_back (clist_t *ll_p, void *member_p)
 {
     return clist_insert_before(ll_p, clist_end(ll_p), member_p);
 }
 
-/*****************************************************************************
- *
- *  NAME        : clist_push_front
- *
- *  DESCRIPTION : Adds an element at the front of the container list
- *
- *  PARAMS      : ll_p     - Container list
- *                member_p - member to be added
- *
- *  RETURNS     : 0 if the element was added
- *                1 otherwise
- *
- *****************************************************************************/
+int clist_push_front_new (clist_t *ll_p, void *member_p)
+{
+    return clist_insert_before_new(ll_p, clist_begin(ll_p), member_p);
+}
+
 int clist_push_front (clist_t *ll_p, void *member_p)
 {
     return clist_insert_before(ll_p, clist_begin(ll_p), member_p);
 }
 
-/*****************************************************************************
- *
- *  NAME        : clist_insert_before
- *
- *  DESCRIPTION : Inserts the given element before the given position in the
- *                container list
- *
- *  PARAMS      : ll_p     - Container list
- *                itr_p    - Container list iterator that provides the position
- *                member_p - member to be inserted
- *
- *  RETURNS     : 0 if the element was added
- *                1 otherwise
- *
- *****************************************************************************/
-int clist_insert_before (clist_t *ll_p, clist_iterator_t *itr_p, void *member_p)
+int clist_insert_before_new (clist_t *ll_p, clist_iterator_t *itr_p, void *member_p)
 {
     int  ret = 1;
 
     if (   ll_p
         && itr_p
         && itr_p->node_p->ll_p == ll_p
-        && itr_p != clist_rend(ll_p)
+        && itr_p != &ll_p->head.itr
        )
     {
         clist_node_t  *nn_p = clist_node_new(ll_p, member_p);
@@ -293,22 +222,32 @@ int clist_insert_before (clist_t *ll_p, clist_iterator_t *itr_p, void *member_p)
     return ret;
 }
 
-/*****************************************************************************
- *
- *  NAME        : clist_insert_after
- *
- *  DESCRIPTION : Inserts the given element after the given position in the
- *                container list
- *
- *  PARAMS      : ll_p     - Container list
- *                itr_p    - Container list iterator that provides the position
- *                member_p - member to be inserted
- *
- *  RETURNS     : 0 if the element was added
- *                1 otherwise
- *
- *****************************************************************************/
-int clist_insert_after (clist_t *ll_p, clist_iterator_t *itr_p, void *member_p)
+int clist_insert_before (clist_t *ll_p, clist_iterator_t *itr_p, void *member_p)
+{
+    int  ret = 1;
+
+    if (ll_p)
+    {
+        void  *mclone_p = ll_p->mclone_fn(&ll_p->allocator, member_p, ll_p->member_size);
+
+        if (   !member_p
+            ||  mclone_p
+           )
+        {
+            ret = clist_insert_before_new(ll_p, itr_p, mclone_p);
+        }
+
+        if (1 == ret)
+        {
+            if (mclone_p)
+                ll_p->mfree_fn(&ll_p->allocator, mclone_p);
+        }
+    }
+
+    return ret;
+}
+
+int clist_insert_after_new (clist_t *ll_p, clist_iterator_t *itr_p, void *member_p)
 {
     int  ret = 1;
 
@@ -337,22 +276,32 @@ int clist_insert_after (clist_t *ll_p, clist_iterator_t *itr_p, void *member_p)
     return ret;
 }
 
-/*****************************************************************************
- *
- *  NAME        : clist_insert_at
- *
- *  DESCRIPTION : Inserts the given element at the given position in the
- *                container list
- *
- *  PARAMS      : ll_p     - Container list
- *                pos      - Index in the list.
- *                member_p - member to be inserted
- *
- *  RETURNS     : 0 if the element was added
- *                1 otherwise
- *
- *****************************************************************************/
-int clist_insert_at (clist_t *ll_p, int pos, void *member_p)
+int clist_insert_after (clist_t *ll_p, clist_iterator_t *itr_p, void *member_p)
+{
+    int  ret = 1;
+
+    if (ll_p)
+    {
+        void  *mclone_p = ll_p->mclone_fn(&ll_p->allocator, member_p, ll_p->member_size);
+
+        if (   !member_p
+            ||  mclone_p
+           )
+        {
+            ret = clist_insert_after_new(ll_p, itr_p, mclone_p);
+        }
+
+        if (1 == ret)
+        {
+            if (mclone_p)
+                ll_p->mfree_fn(&ll_p->allocator, mclone_p);
+        }
+    }
+
+    return ret;
+}
+
+int clist_insert_at_new (clist_t *ll_p, int pos, void *member_p)
 {
     int  ret = 1;
 
@@ -371,7 +320,7 @@ int clist_insert_at (clist_t *ll_p, int pos, void *member_p)
             for (ii = 0; ii < pos; ii++)
                 nd_p = nd_p->next;
 
-              ret = clist_insert_before(ll_p, &nd_p->itr, member_p);
+            ret = clist_insert_before(ll_p, &nd_p->itr, member_p);
         }
         else
         {
@@ -380,25 +329,38 @@ int clist_insert_at (clist_t *ll_p, int pos, void *member_p)
             for (ii = ll_p->count - 1; ii >= pos; ii--)
                 nd_p = nd_p->prev;
 
-              ret = clist_insert_after(ll_p, &nd_p->itr, member_p);
+            ret = clist_insert_after(ll_p, &nd_p->itr, member_p);
         }
     }
 
     return ret;
 }
 
-/*****************************************************************************
- *
- *  NAME        : clist_begin
- *
- *  DESCRIPTION : Returns an iterator that points to the first node of the
- *                container list
- *
- *  PARAMS      : ll_p - Container list
- *
- *  RETURNS     : Iterator
- *
- *****************************************************************************/
+int clist_insert_at (clist_t *ll_p, int pos, void *member_p)
+{
+    int  ret = 1;
+
+    if (ll_p)
+    {
+        void  *mclone_p = ll_p->mclone_fn(&ll_p->allocator, member_p, ll_p->member_size);
+
+        if (   !member_p
+            ||  mclone_p
+           )
+        {
+            ret = clist_insert_at_new(ll_p, pos, mclone_p);
+        }
+
+        if (1 == ret)
+        {
+            if (mclone_p)
+                ll_p->mfree_fn(&ll_p->allocator, mclone_p);
+        }
+    }
+
+    return ret;
+}
+
 clist_iterator_t* clist_begin (clist_t *ll_p)
 {
     clist_iterator_t  *itr_p = NULL;
@@ -409,18 +371,6 @@ clist_iterator_t* clist_begin (clist_t *ll_p)
     return itr_p;
 }
 
-/*****************************************************************************
- *
- *  NAME        : clist_end
- *
- *  DESCRIPTION : Returns an iterator that points to the tail node of the
- *                container list
- *
- *  PARAMS      : ll_p - Container list
- *
- *  RETURNS     : Iterator
- *
- *****************************************************************************/
 clist_iterator_t* clist_end (clist_t *ll_p)
 {
     clist_iterator_t  *itr_p = NULL;
@@ -431,61 +381,6 @@ clist_iterator_t* clist_end (clist_t *ll_p)
     return itr_p;
 }
 
-/*****************************************************************************
- *
- *  NAME        : clist_rbegin
- *
- *  DESCRIPTION : Returns an iterator that points to the last node of the
- *                container list
- *
- *  PARAMS      : ll_p - Container list
- *
- *  RETURNS     : Iterator
- *
- *****************************************************************************/
-clist_iterator_t* clist_rbegin (clist_t *ll_p)
-{
-    clist_iterator_t  *itr_p = NULL;
-
-    if (ll_p)
-        itr_p = &ll_p->tail.prev->itr;
-
-    return itr_p;
-}
-
-/*****************************************************************************
- *
- *  NAME        : clist_rend
- *
- *  DESCRIPTION : Returns an iterator that points to the head node of the
- *                container list
- *
- *  PARAMS      : ll_p - Container list
- *
- *  RETURNS     : Iterator
- *
- *****************************************************************************/
-clist_iterator_t* clist_rend (clist_t *ll_p)
-{
-    clist_iterator_t  *itr_p = NULL;
-
-    if (ll_p)
-        itr_p = &ll_p->head.itr;
-
-    return itr_p;
-}
-
-/*****************************************************************************
- *
- *  NAME        : clist_iterator_next
- *
- *  DESCRIPTION : Returns iterator to next node
- *
- *  PARAMS      : itr_p - Container list iterator
- *
- *  RETURNS     : Iterator
- *
- *****************************************************************************/
 clist_iterator_t* clist_iterator_next (clist_iterator_t *itr_p)
 {
     return   (   itr_p
@@ -495,17 +390,6 @@ clist_iterator_t* clist_iterator_next (clist_iterator_t *itr_p)
            :  NULL;
 }
 
-/*****************************************************************************
- *
- *  NAME        : clist_iterator_prev
- *
- *  DESCRIPTION : Returns iterator to previous node
- *
- *  PARAMS      : itr_p - Container list iterator
- *
- *  RETURNS     : Iterator
- *
- *****************************************************************************/
 clist_iterator_t* clist_iterator_prev (clist_iterator_t *itr_p)
 {
     return   (   itr_p
@@ -515,17 +399,6 @@ clist_iterator_t* clist_iterator_prev (clist_iterator_t *itr_p)
            :  NULL;
 }
 
-/*****************************************************************************
- *
- *  NAME        : clist_get
- *
- *  DESCRIPTION : Returns the member pointed to by this iterator
- *
- *  PARAMS      : itr_p - Container list iterator
- *
- *  RETURNS     : Container list member
- *
- *****************************************************************************/
 void* clist_get (clist_iterator_t *itr_p)
 {
     return   itr_p
@@ -533,19 +406,6 @@ void* clist_get (clist_iterator_t *itr_p)
            : NULL;
 }
 
-/*****************************************************************************
- *
- *  NAME        : clist_get_at
- *
- *  DESCRIPTION : Returns the member at the given position in the container
- *                list
- *
- *  PARAMS      : ll_p - Container list
- *                pos  - Index in the list.
- *
- *  RETURNS     : Container list member being deleted
- *
- *****************************************************************************/
 void* clist_get_at (clist_t *ll_p, unsigned int pos)
 {
     void  *member_p = NULL;
@@ -578,19 +438,7 @@ void* clist_get_at (clist_t *ll_p, unsigned int pos)
     return member_p;
 }
 
-/*****************************************************************************
- *
- *  NAME        : clist_remove
- *
- *  DESCRIPTION : Removes the element pointed to by this iterator from the
- *                container list
- *
- *  PARAMS      : itr_p - Container list iterator
- *
- *  RETURNS     : Container list member being deleted
- *
- *****************************************************************************/
-void* clist_remove (clist_iterator_t *itr_p)
+void* clist_pop (clist_iterator_t *itr_p)
 {
     void  *member_p = NULL;
 
@@ -606,26 +454,13 @@ void* clist_remove (clist_iterator_t *itr_p)
 
         member_p = itr_p->node_p->member_p;
 
-        free(itr_p->node_p);
+        clist_free(itr_p->node_p->ll_p, itr_p->node_p);
     }
 
     return member_p;
 }
 
-/*****************************************************************************
- *
- *  NAME        : clist_remove_at
- *
- *  DESCRIPTION : Removes the element at the given position from the
- *                container list
- *
- *  PARAMS      : ll_p - Container list
- *                pos  - Index in the list.
- *
- *  RETURNS     : Container list member being deleted
- *
- *****************************************************************************/
-void* clist_remove_at (clist_t *ll_p, unsigned int pos)
+void* clist_pop_at (clist_t *ll_p, unsigned int pos)
 {
     void  *member_p = NULL;
 
@@ -651,52 +486,60 @@ void* clist_remove_at (clist_t *ll_p, unsigned int pos)
                 nd_p = nd_p->prev;
         }
 
-        member_p = clist_remove(&nd_p->itr);
+        member_p = clist_pop(&nd_p->itr);
     }
 
     return member_p;
 }
 
-/*****************************************************************************
- *
- *  NAME        : clist_remove_member
- *
- *  DESCRIPTION : Removes the given member node from the container list
- *
- *  PARAMS      : ll_p     - Container list
- *                member_p - clist member
- *
- *  RETURNS     : void
- *
- *****************************************************************************/
-void clist_remove_member (clist_t *ll_p, void *member_p)
+void* clist_pop_member (clist_t *ll_p, void *member_p)
 {
+    void  *lmember_p = NULL;
+
     if (ll_p)
     {
         clist_iterator_t  *itr_p;
 
         clist_foreach(ll_p, itr_p)
         {
-            if (clist_get(itr_p) == member_p)
+            if (0 == ll_p->mcmp_fn(clist_get(itr_p), member_p, ll_p->member_size))
             {
-                clist_remove(itr_p);
+                lmember_p = clist_pop(itr_p);
                 break;
             }
         }
     }
+
+    return lmember_p;
 }
 
-/*****************************************************************************
- *
- *  NAME        : clist_clear
- *
- *  DESCRIPTION : Removes all element in the given container list
- *
- *  PARAMS      : ll_p - Container list
- *
- *  RETURNS     : Nothing
- *
- *****************************************************************************/
+void clist_remove (clist_iterator_t *itr_p)
+{
+    clist_t  *ll_p     =   itr_p
+                         ? itr_p->node_p->ll_p
+                         : NULL;
+    void     *member_p = clist_pop(itr_p);
+
+    if (member_p)
+        ll_p->mfree_fn(&ll_p->allocator, member_p);
+}
+
+void clist_remove_at (clist_t *ll_p, unsigned int pos)
+{
+    void  *member_p = clist_pop_at(ll_p, pos);
+
+    if (member_p)
+        ll_p->mfree_fn(&ll_p->allocator, member_p);
+}
+
+void clist_remove_member (clist_t *ll_p, void *member_p)
+{
+    void  *lmember_p = clist_pop_member(ll_p, member_p);
+
+    if (lmember_p)
+        ll_p->mfree_fn(&ll_p->allocator, lmember_p);
+}
+
 void clist_clear (clist_t *ll_p)
 {
     if (ll_p)
@@ -706,7 +549,3 @@ void clist_clear (clist_t *ll_p)
     }
 }
 
-
-/*****************************************************************************
-   Test Functions
-*****************************************************************************/

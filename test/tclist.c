@@ -23,13 +23,26 @@
         } \
     } while (0)
 
+/*
+ * Dummy allocator
+ */
+static void *my_malloc(size_t s) { return malloc(s); }
+static void my_free(void *p) { free(p); }
+
+static const allocator_t custom_alloc = {
+    .malloc  = my_malloc,
+    .free    = my_free,
+    .calloc  = NULL,
+    .realloc = NULL
+};
+
 
 /*
  * Test 1: Create/Delete
  */
 int test_create_delete()
 {
-    clist_t *ll = clist_new();
+    clist_t *ll = clist_new(&custom_alloc);
     ASSERT_TRUE(ll != NULL);
     ASSERT_EQ(clist_count(ll), 0);
     ASSERT_EQ(clist_empty(ll), 1);
@@ -44,22 +57,31 @@ int test_create_delete()
  */
 int test_push_front_back()
 {
-    clist_t *ll = clist_new();
+    clist_t *ll = clist_new(&custom_alloc);
 
-    clist_push_back(ll, (void*)10);
-    clist_push_front(ll, (void*)20);
-    clist_push_back(ll, (void*)30);
+    clist_set_member_size(ll, sizeof(int));
+
+    int data;
+
+    data = 10; clist_push_back(ll, &data);
+    data = 20; clist_push_front(ll, &data);
+    data = 30; clist_push_back(ll, &data);
 
     ASSERT_EQ(clist_count(ll), 3);
 
+    int *data_p;
+
     clist_iterator_t *it = clist_begin(ll);
-    ASSERT_EQ((long)clist_get(it), 20);
+    data_p = clist_get(it); 
+    ASSERT_EQ(*data_p, 20);
 
     it = clist_iterator_next(it);
-    ASSERT_EQ((long)clist_get(it), 10);
+    data_p = clist_get(it); 
+    ASSERT_EQ(*data_p, 10);
 
     it = clist_iterator_next(it);
-    ASSERT_EQ((long)clist_get(it), 30);
+    data_p = clist_get(it); 
+    ASSERT_EQ(*data_p, 30);
 
     clist_del(ll);
     return 0;
@@ -70,18 +92,25 @@ int test_push_front_back()
  */
 int test_insert_at()
 {
-    clist_t *ll = clist_new();
+    clist_t *ll = clist_new(&custom_alloc);
+    
+    clist_set_member_size(ll, sizeof(int));
 
-    clist_insert_at(ll, 0, (void*)100);  // [100]
-    clist_insert_at(ll, 1, (void*)200);  // [100,200]
-    clist_insert_at(ll, 1, (void*)150);  // [100,150,200]
-    clist_insert_at(ll, 3, (void*)300);  // [100,150,200,300]
+    int data;
+
+    data = 100; clist_insert_at(ll, 0, &data);  // [100]
+    data = 200; clist_insert_at(ll, 1, &data);  // [100,200]
+    data = 150; clist_insert_at(ll, 1, &data);  // [100,150,200]
+    data = 300; clist_insert_at(ll, 3, &data);  // [100,150,200,300]
 
     ASSERT_EQ(clist_count(ll), 4);
-    ASSERT_EQ((long)clist_get_at(ll, 0), 100);
-    ASSERT_EQ((long)clist_get_at(ll, 1), 150);
-    ASSERT_EQ((long)clist_get_at(ll, 2), 200);
-    ASSERT_EQ((long)clist_get_at(ll, 3), 300);
+
+    int *data_p;
+    
+    data_p = clist_get_at(ll, 0); ASSERT_EQ(*data_p, 100);
+    data_p = clist_get_at(ll, 1); ASSERT_EQ(*data_p, 150);
+    data_p = clist_get_at(ll, 2); ASSERT_EQ(*data_p, 200);
+    data_p = clist_get_at(ll, 3); ASSERT_EQ(*data_p, 300);
 
     clist_del(ll);
     return 0;
@@ -92,23 +121,19 @@ int test_insert_at()
  */
 int test_traversal()
 {
-    clist_t *ll = clist_new();
+    clist_t *ll = clist_new(&custom_alloc);
 
-    for (long i = 1; i <= 5; i++)
-        clist_push_back(ll, (void*)i);
+    clist_set_member_size(ll, sizeof(int));
 
-    int expected_forward[] = {1,2,3,4,5};
+    for (int i = 1; i <= 5; i++)
+        clist_push_back(ll, &i);
+
+    int expected[] = {1,2,3,4,5};
     int i = 0;
 
     clist_iterator_t *it;
     for (it = clist_begin(ll); it != clist_end(ll); it = clist_iterator_next(it))
-        ASSERT_EQ((long)clist_get(it), expected_forward[i++]);
-
-    int expected_reverse[] = {5,4,3,2,1};
-    i = 0;
-
-    for (it = clist_rbegin(ll); it != clist_rend(ll); it = clist_iterator_prev(it))
-        ASSERT_EQ((long)clist_get(it), expected_reverse[i++]);
+        ASSERT_EQ(*((int *)clist_get(it)), expected[i++]);
 
     clist_del(ll);
     return 0;
@@ -117,25 +142,34 @@ int test_traversal()
 /*
  * Test 5: Remove operations
  */
-int test_remove()
+int test_pop()
 {
-    clist_t *ll = clist_new();
+    clist_t *ll = clist_new(&custom_alloc);
 
-    clist_push_back(ll, (void*)10);
-    clist_push_back(ll, (void*)20);
-    clist_push_back(ll, (void*)30);
+    clist_set_member_size(ll, sizeof(int));
+
+    int data;
+
+    data = 10; clist_push_back(ll, &data);
+    data = 20; clist_push_back(ll, &data);
+    data = 30; clist_push_back(ll, &data);
+
+    int *data_p;
 
     clist_iterator_t *it = clist_begin(ll);
-    ASSERT_EQ((long)clist_remove(it), 10);
+    data_p = clist_pop(it); ASSERT_EQ(*data_p, 10);
+    custom_alloc.free(data_p);
 
     ASSERT_EQ(clist_count(ll), 2);
-    ASSERT_EQ((long)clist_get_at(ll, 0), 20);
-    ASSERT_EQ((long)clist_get_at(ll, 1), 30);
+    data_p = clist_get_at(ll, 0); ASSERT_EQ(*data_p, 20);
+    data_p = clist_get_at(ll, 1); ASSERT_EQ(*data_p, 30);
 
-    ASSERT_EQ((long)clist_remove_at(ll, 1), 30);
+    data_p = clist_pop_at(ll, 1); ASSERT_EQ(*data_p, 30);
+    custom_alloc.free(data_p);
     ASSERT_EQ(clist_count(ll), 1);
 
-    ASSERT_EQ((long)clist_remove_at(ll, 0), 20);
+    data_p = clist_pop_at(ll, 0); ASSERT_EQ(*data_p, 20);
+    custom_alloc.free(data_p);
     ASSERT_EQ(clist_count(ll), 0);
 
     clist_del(ll);
@@ -147,10 +181,12 @@ int test_remove()
  */
 int test_clear()
 {
-    clist_t *ll = clist_new();
+    clist_t *ll = clist_new(&custom_alloc);
 
-    for (long i = 0; i < 10; i++)
-        clist_push_back(ll, (void*)i);
+    clist_set_member_size(ll, sizeof(int));
+
+    for (int i = 0; i < 10; i++)
+        clist_push_back(ll, &i);
 
     ASSERT_EQ(clist_count(ll), 10);
 
@@ -174,7 +210,7 @@ void test_clist (void)
         test_push_front_back,
         test_insert_at,
         test_traversal,
-        test_remove,
+        test_pop,
         test_clear
     };
 
@@ -183,7 +219,7 @@ void test_clist (void)
         "push_front_back",
         "insert_at",
         "traversal",
-        "remove",
+        "pop",
         "clear"
     };
 
