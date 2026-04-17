@@ -4,22 +4,14 @@
 #include <stdlib.h>
 
 
-typedef struct clist_node_s clist_node_t;
-
-struct clist_iterator_s
-{
-    clist_node_t  *node_p;
-};
-
 struct clist_node_s
 {
-    void              *member_p;
+    void          *member_p;
 
-    clist_node_t      *prev,
-                      *next;
+    clist_node_t  *prev,
+                  *next;
 
-    clist_t           *ll_p;
-    clist_iterator_t   itr;
+    clist_t       *ll_p;
 };
 
 struct clist_s
@@ -61,7 +53,6 @@ static clist_node_t* clist_node_new (clist_t *ll_p, void *member_p)
         nn_p->ll_p = ll_p;
         nn_p->next = NULL;
         nn_p->prev = NULL;
-        nn_p->itr.node_p = nn_p;
 
         nn_p->member_p = member_p;
     }
@@ -104,13 +95,11 @@ clist_t* clist_new (const allocator_t  *allocator_p)
         ll_p->head.prev = NULL;
         ll_p->head.next = &ll_p->tail;
         ll_p->head.ll_p = ll_p;
-        ll_p->head.itr.node_p = &ll_p->head;
 
         ll_p->tail.member_p = NULL;
         ll_p->tail.prev = &ll_p->head;
         ll_p->tail.next = NULL;
         ll_p->tail.ll_p = ll_p;
-        ll_p->tail.itr.node_p = &ll_p->tail;
 
         ll_p->count = 0;
 
@@ -173,58 +162,41 @@ int clist_empty (clist_t *ll_p)
            : 0;
 }
 
-int clist_push_back_new (clist_t *ll_p, void *member_p)
-{
-    return clist_insert_before_new(ll_p, clist_end(ll_p), member_p);
-}
+clist_node_t* clist_push_back_new  (clist_t *ll_p, void *member_p) { return clist_insert_before_new(ll_p, &ll_p->tail, member_p); }
+clist_node_t* clist_push_back      (clist_t *ll_p, void *member_p) { return clist_insert_before    (ll_p, &ll_p->tail, member_p); }
+clist_node_t* clist_push_front_new (clist_t *ll_p, void *member_p) { return clist_insert_after_new (ll_p, &ll_p->head, member_p); }
+clist_node_t* clist_push_front     (clist_t *ll_p, void *member_p) { return clist_insert_after     (ll_p, &ll_p->head, member_p); }
 
-int clist_push_back (clist_t *ll_p, void *member_p)
+clist_node_t* clist_insert_before_new (clist_t *ll_p, clist_node_t *node_p, void *member_p)
 {
-    return clist_insert_before(ll_p, clist_end(ll_p), member_p);
-}
-
-int clist_push_front_new (clist_t *ll_p, void *member_p)
-{
-    return clist_insert_before_new(ll_p, clist_begin(ll_p), member_p);
-}
-
-int clist_push_front (clist_t *ll_p, void *member_p)
-{
-    return clist_insert_before(ll_p, clist_begin(ll_p), member_p);
-}
-
-int clist_insert_before_new (clist_t *ll_p, clist_iterator_t *itr_p, void *member_p)
-{
-    int  ret = 1;
+    clist_node_t  *nn_p = NULL;
 
     if (   ll_p
-        && itr_p
-        && itr_p->node_p->ll_p == ll_p
-        && itr_p != &ll_p->head.itr
+        && node_p
+        && node_p->ll_p == ll_p
+        && node_p != &ll_p->head
        )
     {
-        clist_node_t  *nn_p = clist_node_new(ll_p, member_p);
+        nn_p = clist_node_new(ll_p, member_p);
 
         if (nn_p)
         {
-            nn_p->prev = itr_p->node_p->prev;
-            nn_p->next = itr_p->node_p;
+            nn_p->prev = node_p->prev;
+            nn_p->next = node_p;
 
             nn_p->prev->next = nn_p;
             nn_p->next->prev = nn_p;
 
             ll_p->count++;
-
-            ret = 0;
         }
     }
 
-    return ret;
+    return nn_p;
 }
 
-int clist_insert_before (clist_t *ll_p, clist_iterator_t *itr_p, void *member_p)
+clist_node_t* clist_insert_before (clist_t *ll_p, clist_node_t *node_p, void *member_p)
 {
-    int  ret = 1;
+    clist_node_t  *nn_p = NULL;
 
     if (ll_p)
     {
@@ -234,111 +206,60 @@ int clist_insert_before (clist_t *ll_p, clist_iterator_t *itr_p, void *member_p)
             ||  mclone_p
            )
         {
-            ret = clist_insert_before_new(ll_p, itr_p, mclone_p);
+            nn_p = clist_insert_before_new(ll_p, node_p, mclone_p);
         }
 
-        if (1 == ret)
+        if (!nn_p)
         {
             if (mclone_p)
                 ll_p->mfree_fn(&ll_p->allocator, mclone_p);
         }
     }
 
-    return ret;
+    return nn_p;
 }
 
-int clist_insert_after_new (clist_t *ll_p, clist_iterator_t *itr_p, void *member_p)
+clist_node_t* clist_insert_after_new (clist_t *ll_p, clist_node_t *node_p, void *member_p) { return clist_insert_before_new(ll_p, clist_next(node_p), member_p); }
+clist_node_t* clist_insert_after     (clist_t *ll_p, clist_node_t *node_p, void *member_p) { return clist_insert_before    (ll_p, clist_next(node_p), member_p); }
+
+clist_node_t* clist_insert_at_new (clist_t *ll_p, int pos, void *member_p)
 {
-    int  ret = 1;
-
-    if (   ll_p
-        && itr_p
-        && itr_p->node_p->ll_p == ll_p
-        && itr_p != clist_end(ll_p)
-       )
-    {
-        clist_node_t  *nn_p = clist_node_new(ll_p, member_p);
-
-        if (nn_p)
-        {
-            nn_p->prev = itr_p->node_p;
-            nn_p->next = itr_p->node_p->next;
-
-            nn_p->prev->next = nn_p;
-            nn_p->next->prev = nn_p;
-
-            ll_p->count++;
-
-            ret = 0;
-        }
-    }
-
-    return ret;
-}
-
-int clist_insert_after (clist_t *ll_p, clist_iterator_t *itr_p, void *member_p)
-{
-    int  ret = 1;
-
-    if (ll_p)
-    {
-        void  *mclone_p = ll_p->mclone_fn(&ll_p->allocator, member_p, ll_p->member_size);
-
-        if (   !member_p
-            ||  mclone_p
-           )
-        {
-            ret = clist_insert_after_new(ll_p, itr_p, mclone_p);
-        }
-
-        if (1 == ret)
-        {
-            if (mclone_p)
-                ll_p->mfree_fn(&ll_p->allocator, mclone_p);
-        }
-    }
-
-    return ret;
-}
-
-int clist_insert_at_new (clist_t *ll_p, int pos, void *member_p)
-{
-    int  ret = 1;
+    clist_node_t  *nn_p = NULL;
 
     if (   ll_p
         && pos >= 0
         && pos <= ll_p->count
        )
     {
-        clist_node_t  *nd_p;
+        clist_node_t  *node_p;
         int            ii;
 
         if (pos < ll_p->count / 2)
         {
-            nd_p = ll_p->head.next;
+            node_p = ll_p->head.next;
 
             for (ii = 0; ii < pos; ii++)
-                nd_p = nd_p->next;
+                node_p = node_p->next;
 
-            ret = clist_insert_before(ll_p, &nd_p->itr, member_p);
+            nn_p = clist_insert_before_new(ll_p, node_p, member_p);
         }
         else
         {
-            nd_p = ll_p->tail.prev;
+            node_p = ll_p->tail.prev;
 
             for (ii = ll_p->count - 1; ii >= pos; ii--)
-                nd_p = nd_p->prev;
+                node_p = node_p->prev;
 
-            ret = clist_insert_after(ll_p, &nd_p->itr, member_p);
+            nn_p = clist_insert_after_new(ll_p, node_p, member_p);
         }
     }
 
-    return ret;
+    return nn_p;
 }
 
-int clist_insert_at (clist_t *ll_p, int pos, void *member_p)
+clist_node_t* clist_insert_at (clist_t *ll_p, int pos, void *member_p)
 {
-    int  ret = 1;
+    clist_node_t  *nn_p = NULL;
 
     if (ll_p)
     {
@@ -348,61 +269,57 @@ int clist_insert_at (clist_t *ll_p, int pos, void *member_p)
             ||  mclone_p
            )
         {
-            ret = clist_insert_at_new(ll_p, pos, mclone_p);
+            nn_p = clist_insert_at_new(ll_p, pos, mclone_p);
         }
 
-        if (1 == ret)
+        if (!nn_p)
         {
             if (mclone_p)
                 ll_p->mfree_fn(&ll_p->allocator, mclone_p);
         }
     }
 
-    return ret;
+    return nn_p;
 }
 
-clist_iterator_t* clist_begin (clist_t *ll_p)
+clist_node_t* clist_begin (clist_t *ll_p)
 {
-    clist_iterator_t  *itr_p = NULL;
+    clist_node_t  *node_p = NULL;
 
     if (ll_p)
-        itr_p = &ll_p->head.next->itr;
+        node_p = ll_p->head.next;
 
-    return itr_p;
+    return node_p;
 }
 
-clist_iterator_t* clist_end (clist_t *ll_p)
+clist_node_t* clist_end (clist_t *ll_p)
 {
-    clist_iterator_t  *itr_p = NULL;
+    clist_node_t  *node_p = NULL;
 
     if (ll_p)
-        itr_p = &ll_p->tail.itr;
+        node_p = &ll_p->tail;
 
-    return itr_p;
+    return node_p;
 }
 
-clist_iterator_t* clist_iterator_next (clist_iterator_t *itr_p)
+clist_node_t* clist_next (clist_node_t *node_p)
 {
-    return   (   itr_p
-              && itr_p->node_p->next
-             )
-           ? &itr_p->node_p->next->itr
-           :  NULL;
+    return   node_p
+           ? node_p->next
+           : NULL;
 }
 
-clist_iterator_t* clist_iterator_prev (clist_iterator_t *itr_p)
+clist_node_t* clist_prev (clist_node_t *node_p)
 {
-    return   (   itr_p
-              && itr_p->node_p->prev
-             )
-           ? &itr_p->node_p->prev->itr
-           :  NULL;
+    return   node_p
+           ? node_p->prev
+           : NULL;
 }
 
-void* clist_get (clist_iterator_t *itr_p)
+void* clist_get (clist_node_t *node_p)
 {
-    return   itr_p
-           ? itr_p->node_p->member_p
+    return   node_p
+           ? node_p->member_p
            : NULL;
 }
 
@@ -438,23 +355,25 @@ void* clist_get_at (clist_t *ll_p, unsigned int pos)
     return member_p;
 }
 
-void* clist_pop (clist_iterator_t *itr_p)
+void* clist_pop (clist_t *ll_p, clist_node_t *node_p)
 {
     void  *member_p = NULL;
 
-    if (   itr_p
-        && itr_p->node_p->prev
-        && itr_p->node_p->next
+    if (   ll_p
+        && node_p
+        && node_p->ll_p == ll_p
+        && node_p->prev
+        && node_p->next
        )
     {
-        itr_p->node_p->prev->next = itr_p->node_p->next;
-        itr_p->node_p->next->prev = itr_p->node_p->prev;
+        node_p->prev->next = node_p->next;
+        node_p->next->prev = node_p->prev;
 
-        itr_p->node_p->ll_p->count--;
+        ll_p->count--;
 
-        member_p = itr_p->node_p->member_p;
+        member_p = node_p->member_p;
 
-        clist_free(itr_p->node_p->ll_p, itr_p->node_p);
+        clist_free(ll_p, node_p);
     }
 
     return member_p;
@@ -486,7 +405,7 @@ void* clist_pop_at (clist_t *ll_p, unsigned int pos)
                 nd_p = nd_p->prev;
         }
 
-        member_p = clist_pop(&nd_p->itr);
+        member_p = clist_pop(ll_p, nd_p);
     }
 
     return member_p;
@@ -498,13 +417,13 @@ void* clist_pop_member (clist_t *ll_p, void *member_p)
 
     if (ll_p)
     {
-        clist_iterator_t  *itr_p;
+        clist_node_t  *nd_p;
 
-        clist_foreach(ll_p, itr_p)
+        clist_foreach(ll_p, nd_p)
         {
-            if (0 == ll_p->mcmp_fn(clist_get(itr_p), member_p, ll_p->member_size))
+            if (0 == ll_p->mcmp_fn(clist_get(nd_p), member_p, ll_p->member_size))
             {
-                lmember_p = clist_pop(itr_p);
+                lmember_p = clist_pop(ll_p, nd_p);
                 break;
             }
         }
@@ -513,12 +432,9 @@ void* clist_pop_member (clist_t *ll_p, void *member_p)
     return lmember_p;
 }
 
-void clist_remove (clist_iterator_t *itr_p)
+void clist_remove (clist_t *ll_p, clist_node_t *node_p)
 {
-    clist_t  *ll_p     =   itr_p
-                         ? itr_p->node_p->ll_p
-                         : NULL;
-    void     *member_p = clist_pop(itr_p);
+    void  *member_p = clist_pop(ll_p, node_p);
 
     if (member_p)
         ll_p->mfree_fn(&ll_p->allocator, member_p);
@@ -545,7 +461,7 @@ void clist_clear (clist_t *ll_p)
     if (ll_p)
     {
         while (ll_p->count > 0)
-            clist_remove(clist_begin(ll_p));
+            clist_remove(ll_p, clist_begin(ll_p));
     }
 }
 

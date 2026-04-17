@@ -23,11 +23,13 @@
         } \
     } while (0)
 
+size_t mem_usage = 0;
+
 /*
  * Dummy allocator
  */
-static void *my_malloc(size_t s) { return malloc(s); }
-static void my_free(void *p) { free(p); }
+static void *my_malloc(size_t s) { size_t *ptr = malloc(sizeof(size_t) + s); *ptr = s; mem_usage += s; return ptr + 1; }
+static void my_free(void *p) { size_t *ptr = p - sizeof(size_t); mem_usage -= *ptr; free(ptr); }
 
 static const allocator_t custom_alloc = {
     .malloc  = my_malloc,
@@ -49,6 +51,7 @@ int test_create_delete()
 
     ll = clist_del(ll);
     ASSERT_TRUE(ll == NULL);
+    ASSERT_EQ(mem_usage, 0);
     return 0;
 }
 
@@ -71,19 +74,20 @@ int test_push_front_back()
 
     int *data_p;
 
-    clist_iterator_t *it = clist_begin(ll);
-    data_p = clist_get(it); 
+    clist_node_t *n = clist_begin(ll);
+    data_p = clist_get(n); 
     ASSERT_EQ(*data_p, 20);
 
-    it = clist_iterator_next(it);
-    data_p = clist_get(it); 
+    n = clist_next(n);
+    data_p = clist_get(n); 
     ASSERT_EQ(*data_p, 10);
 
-    it = clist_iterator_next(it);
-    data_p = clist_get(it); 
+    n = clist_next(n);
+    data_p = clist_get(n); 
     ASSERT_EQ(*data_p, 30);
 
     clist_del(ll);
+    ASSERT_EQ(mem_usage, 0);
     return 0;
 }
 
@@ -113,6 +117,7 @@ int test_insert_at()
     data_p = clist_get_at(ll, 3); ASSERT_EQ(*data_p, 300);
 
     clist_del(ll);
+    ASSERT_EQ(mem_usage, 0);
     return 0;
 }
 
@@ -131,11 +136,12 @@ int test_traversal()
     int expected[] = {1,2,3,4,5};
     int i = 0;
 
-    clist_iterator_t *it;
-    for (it = clist_begin(ll); it != clist_end(ll); it = clist_iterator_next(it))
-        ASSERT_EQ(*((int *)clist_get(it)), expected[i++]);
+    clist_node_t *n;
+    for (n = clist_begin(ll); n != clist_end(ll); n = clist_next(n))
+        ASSERT_EQ(*((int *)clist_get(n)), expected[i++]);
 
     clist_del(ll);
+    ASSERT_EQ(mem_usage, 0);
     return 0;
 }
 
@@ -156,8 +162,8 @@ int test_pop()
 
     int *data_p;
 
-    clist_iterator_t *it = clist_begin(ll);
-    data_p = clist_pop(it); ASSERT_EQ(*data_p, 10);
+    clist_node_t *n = clist_begin(ll);
+    data_p = clist_pop(ll, n); ASSERT_EQ(*data_p, 10);
     custom_alloc.free(data_p);
 
     ASSERT_EQ(clist_count(ll), 2);
@@ -173,6 +179,7 @@ int test_pop()
     ASSERT_EQ(clist_count(ll), 0);
 
     clist_del(ll);
+    ASSERT_EQ(mem_usage, 0);
     return 0;
 }
 
@@ -195,6 +202,7 @@ int test_clear()
     ASSERT_EQ(clist_empty(ll), 1);
 
     clist_del(ll);
+    ASSERT_EQ(mem_usage, 0);
     return 0;
 }
 
