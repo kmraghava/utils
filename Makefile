@@ -28,6 +28,7 @@ includes := -Iinclude
 
 # Source files
 sources := $(src_dir)/clist.c \
+		   $(src_dir)/ctree.c \
 		   $(src_dir)/json_field.c \
 		   $(src_dir)/logger.c \
 		   $(src_dir)/mac_addr.c \
@@ -50,6 +51,7 @@ test_build_dir := $(build_dir)/test
 
 # unit test sources
 test_sources := $(test_src_dir)/tclist.c \
+                $(test_src_dir)/tctree.c \
                 $(test_src_dir)/tjson_field.c \
                 $(test_src_dir)/tmacro_args.c \
                 $(test_src_dir)/tlist.c \

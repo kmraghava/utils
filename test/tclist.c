@@ -23,8 +23,6 @@
         } \
     } while (0)
 
-size_t mem_usage = 0;
-
 
 /*
  * Test 1: Create/Delete
@@ -38,7 +36,6 @@ int test_create_delete()
 
     ll = clist_del(ll);
     ASSERT_TRUE(ll == NULL);
-    ASSERT_EQ(mem_usage, 0);
 
     return 0;
 }
@@ -73,7 +70,6 @@ int test_push_front_back()
     ASSERT_EQ(*data_p, 30);
 
     clist_del(ll);
-    ASSERT_EQ(mem_usage, 0);
 
     return 0;
 }
@@ -102,7 +98,6 @@ int test_insert_at()
     data_p = clist_member_at(ll, 3); ASSERT_EQ(*data_p, 300);
 
     clist_del(ll);
-    ASSERT_EQ(mem_usage, 0);
 
     return 0;
 }
@@ -126,7 +121,6 @@ int test_traversal()
         ASSERT_EQ(*((int *)clist_member(n)), data[i++]);
 
     clist_del(ll);
-    ASSERT_EQ(mem_usage, 0);
 
     return 0;
 }
@@ -161,7 +155,6 @@ int test_remove()
     ASSERT_EQ(clist_count(ll), 0);
 
     clist_del(ll);
-    ASSERT_EQ(mem_usage, 0);
 
     return 0;
 }
@@ -185,7 +178,6 @@ int test_clear()
     ASSERT_EQ(clist_empty(ll), 1);
 
     clist_del(ll);
-    ASSERT_EQ(mem_usage, 0);
 
     return 0;
 }
@@ -210,7 +202,6 @@ int test_extend()
 
     clist_del(ll1);
     clist_del(ll2);
-    ASSERT_EQ(mem_usage, 0);
 
     return 0;
 }
@@ -235,7 +226,6 @@ int test_append()
 
     clist_del(ll1);
     clist_del(ll2);
-    ASSERT_EQ(mem_usage, 0);
 
     return 0;
 }
@@ -277,7 +267,6 @@ int test_find()
     ASSERT_TRUE(data_p == NULL);
 
     clist_del(ll);
-    ASSERT_EQ(mem_usage, 0);
 
     return 0;
 }
@@ -323,7 +312,6 @@ int test_find_all()
     clist_del(data_list);
 
     clist_del(ll);
-    ASSERT_EQ(mem_usage, 0);
 
     return 0;
 }

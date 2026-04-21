@@ -7,6 +7,7 @@ extern void test_clist (void);
 extern void test_macro_args (void);
 extern void test_json_field (void);
 extern void test_mac_addr (void);
+extern void test_ctree (void);
 
 int main ()
 {
@@ -20,6 +21,8 @@ int main ()
     test_json_field();
     printf("\n");
     test_mac_addr();
+    printf("\n");
+    test_ctree();
     printf("\n");
 
     return 0;
