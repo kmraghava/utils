@@ -25,26 +25,13 @@
 
 size_t mem_usage = 0;
 
-/*
- * Dummy allocator
- */
-static void *my_malloc(size_t s) { size_t *ptr = malloc(sizeof(size_t) + s); *ptr = s; mem_usage += s; return ptr + 1; }
-static void my_free(void *p) { size_t *ptr = p - sizeof(size_t); mem_usage -= *ptr; free(ptr); }
-
-static const allocator_t custom_alloc = {
-    .malloc  = my_malloc,
-    .free    = my_free,
-    .calloc  = NULL,
-    .realloc = NULL
-};
-
 
 /*
  * Test 1: Create/Delete
  */
 int test_create_delete()
 {
-    clist_t *ll = clist_new(&custom_alloc);
+    clist_t *ll = clist_new();
     ASSERT_TRUE(ll != NULL);
     ASSERT_EQ(clist_count(ll), 0);
     ASSERT_EQ(clist_empty(ll), 1);
@@ -52,6 +39,7 @@ int test_create_delete()
     ll = clist_del(ll);
     ASSERT_TRUE(ll == NULL);
     ASSERT_EQ(mem_usage, 0);
+
     return 0;
 }
 
@@ -60,34 +48,33 @@ int test_create_delete()
  */
 int test_push_front_back()
 {
-    clist_t *ll = clist_new(&custom_alloc);
+    clist_t *ll = clist_new();
 
-    clist_set_member_size(ll, sizeof(int));
+    int data[3] = { 10, 20, 30 };
 
-    int data;
-
-    data = 10; clist_push_back(ll, &data);
-    data = 20; clist_push_front(ll, &data);
-    data = 30; clist_push_back(ll, &data);
+    clist_push_back(ll, &data[0]);
+    clist_push_front(ll, &data[1]);
+    clist_push_back(ll, &data[2]);
 
     ASSERT_EQ(clist_count(ll), 3);
 
     int *data_p;
 
-    clist_node_t *n = clist_begin(ll);
-    data_p = clist_get(n); 
+    clist_node_t *n = clist_first(ll);
+    data_p = clist_member(n); 
     ASSERT_EQ(*data_p, 20);
 
     n = clist_next(n);
-    data_p = clist_get(n); 
+    data_p = clist_member(n); 
     ASSERT_EQ(*data_p, 10);
 
     n = clist_next(n);
-    data_p = clist_get(n); 
+    data_p = clist_member(n); 
     ASSERT_EQ(*data_p, 30);
 
     clist_del(ll);
     ASSERT_EQ(mem_usage, 0);
+
     return 0;
 }
 
@@ -96,28 +83,27 @@ int test_push_front_back()
  */
 int test_insert_at()
 {
-    clist_t *ll = clist_new(&custom_alloc);
-    
-    clist_set_member_size(ll, sizeof(int));
+    clist_t *ll = clist_new();
 
-    int data;
+    int data[4] = { 100, 200, 150, 300 };
 
-    data = 100; clist_insert_at(ll, 0, &data);  // [100]
-    data = 200; clist_insert_at(ll, 1, &data);  // [100,200]
-    data = 150; clist_insert_at(ll, 1, &data);  // [100,150,200]
-    data = 300; clist_insert_at(ll, 3, &data);  // [100,150,200,300]
+    clist_insert_at(ll, 0, &data[0]);  // [100]
+    clist_insert_at(ll, 1, &data[1]);  // [100,200]
+    clist_insert_at(ll, 1, &data[2]);  // [100,150,200]
+    clist_insert_at(ll, 3, &data[3]);  // [100,150,200,300]
 
     ASSERT_EQ(clist_count(ll), 4);
 
     int *data_p;
     
-    data_p = clist_get_at(ll, 0); ASSERT_EQ(*data_p, 100);
-    data_p = clist_get_at(ll, 1); ASSERT_EQ(*data_p, 150);
-    data_p = clist_get_at(ll, 2); ASSERT_EQ(*data_p, 200);
-    data_p = clist_get_at(ll, 3); ASSERT_EQ(*data_p, 300);
+    data_p = clist_member_at(ll, 0); ASSERT_EQ(*data_p, 100);
+    data_p = clist_member_at(ll, 1); ASSERT_EQ(*data_p, 150);
+    data_p = clist_member_at(ll, 2); ASSERT_EQ(*data_p, 200);
+    data_p = clist_member_at(ll, 3); ASSERT_EQ(*data_p, 300);
 
     clist_del(ll);
     ASSERT_EQ(mem_usage, 0);
+
     return 0;
 }
 
@@ -126,60 +112,57 @@ int test_insert_at()
  */
 int test_traversal()
 {
-    clist_t *ll = clist_new(&custom_alloc);
+    clist_t *ll = clist_new();
 
-    clist_set_member_size(ll, sizeof(int));
+    int data[5] = {1,2,3,4,5};
+    int i;
 
-    for (int i = 1; i <= 5; i++)
-        clist_push_back(ll, &i);
+    for (i = 0; i < 5; i++)
+        clist_push_back(ll, &data[i]);
 
-    int expected[] = {1,2,3,4,5};
-    int i = 0;
-
+    i = 0;
     clist_node_t *n;
-    for (n = clist_begin(ll); n != clist_end(ll); n = clist_next(n))
-        ASSERT_EQ(*((int *)clist_get(n)), expected[i++]);
+    for (n = clist_first(ll); n != clist_tail(ll); n = clist_next(n))
+        ASSERT_EQ(*((int *)clist_member(n)), data[i++]);
 
     clist_del(ll);
     ASSERT_EQ(mem_usage, 0);
+
     return 0;
 }
 
 /*
  * Test 5: Remove operations
  */
-int test_pop()
+int test_remove()
 {
-    clist_t *ll = clist_new(&custom_alloc);
+    clist_t *ll = clist_new();
 
-    clist_set_member_size(ll, sizeof(int));
+    int data[3] = { 10, 20, 30 };
 
-    int data;
-
-    data = 10; clist_push_back(ll, &data);
-    data = 20; clist_push_back(ll, &data);
-    data = 30; clist_push_back(ll, &data);
+    clist_push_back(ll, &data[0]);
+    clist_push_back(ll, &data[1]);
+    clist_push_back(ll, &data[2]);
 
     int *data_p;
 
-    clist_node_t *n = clist_begin(ll);
-    data_p = clist_pop(ll, n); ASSERT_EQ(*data_p, 10);
-    custom_alloc.free(data_p);
+    clist_node_t *n = clist_first(ll);
 
+    clist_remove(ll, n);
     ASSERT_EQ(clist_count(ll), 2);
-    data_p = clist_get_at(ll, 0); ASSERT_EQ(*data_p, 20);
-    data_p = clist_get_at(ll, 1); ASSERT_EQ(*data_p, 30);
 
-    data_p = clist_pop_at(ll, 1); ASSERT_EQ(*data_p, 30);
-    custom_alloc.free(data_p);
+    data_p = clist_member_at(ll, 0); ASSERT_EQ(*data_p, 20);
+    data_p = clist_member_at(ll, 1); ASSERT_EQ(*data_p, 30);
+
+    clist_remove_at(ll, 1);
     ASSERT_EQ(clist_count(ll), 1);
 
-    data_p = clist_pop_at(ll, 0); ASSERT_EQ(*data_p, 20);
-    custom_alloc.free(data_p);
+    clist_remove_at(ll, 0);
     ASSERT_EQ(clist_count(ll), 0);
 
     clist_del(ll);
     ASSERT_EQ(mem_usage, 0);
+
     return 0;
 }
 
@@ -188,12 +171,12 @@ int test_pop()
  */
 int test_clear()
 {
-    clist_t *ll = clist_new(&custom_alloc);
+    clist_t *ll = clist_new();
 
-    clist_set_member_size(ll, sizeof(int));
+    int data[10] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
     for (int i = 0; i < 10; i++)
-        clist_push_back(ll, &i);
+        clist_push_back(ll, &data[i]);
 
     ASSERT_EQ(clist_count(ll), 10);
 
@@ -203,6 +186,145 @@ int test_clear()
 
     clist_del(ll);
     ASSERT_EQ(mem_usage, 0);
+
+    return 0;
+}
+
+/*
+ * Test 7: Extend
+ */
+int test_extend()
+{
+    clist_t *ll1 = clist_new(), *ll2 = clist_new();
+
+    int data1[3] = { 10, 20, 30 };
+    int data2[5] = { 40, 50, 60, 70 };
+
+    for (int i = 0; i < 3; i++) clist_push_back(ll1, &data1[i]);
+    for (int i = 0; i < 4; i++) clist_push_back(ll2, &data2[i]);
+
+    clist_extend(ll1, ll2);
+
+    ASSERT_EQ(clist_count(ll1), 7);
+    ASSERT_EQ(clist_count(ll2), 4);
+
+    clist_del(ll1);
+    clist_del(ll2);
+    ASSERT_EQ(mem_usage, 0);
+
+    return 0;
+}
+
+/*
+ * Test 8: Append
+ */
+int test_append()
+{
+    clist_t *ll1 = clist_new(), *ll2 = clist_new();
+
+    int data1[3] = { 10, 20, 30 };
+    int data2[5] = { 40, 50, 60, 70 };
+
+    for (int i = 0; i < 3; i++) clist_push_back(ll1, &data1[i]);
+    for (int i = 0; i < 4; i++) clist_push_back(ll2, &data2[i]);
+
+    clist_append(ll1, ll2);
+
+    ASSERT_EQ(clist_count(ll1), 7);
+    ASSERT_EQ(clist_count(ll2), 0);
+
+    clist_del(ll1);
+    clist_del(ll2);
+    ASSERT_EQ(mem_usage, 0);
+
+    return 0;
+}
+
+bool cmp_int (void *member_p, void *key_p)
+{
+    int *imember_p = member_p, *ikey_p = key_p;
+
+    return *imember_p == *ikey_p;
+}
+
+/*
+ * Test 9: Find
+ */
+int test_find()
+{
+    clist_t *ll = clist_new();
+
+    int data[5] = { 10, 20, 30, 40, 50 };
+
+    for (int i=0; i<5; i++)
+        clist_push_back(ll, &data[i]);
+
+    int *data_p;
+    int key;
+
+    for (int i=0; i<5; i++)
+    {
+        key = data[i];
+        data_p = clist_find(ll, &key, cmp_int);
+
+        ASSERT_TRUE(data_p != NULL);
+        ASSERT_EQ(*data_p, key);
+    }
+
+    key = 100;
+    data_p = clist_find(ll, &key, cmp_int);
+
+    ASSERT_TRUE(data_p == NULL);
+
+    clist_del(ll);
+    ASSERT_EQ(mem_usage, 0);
+
+    return 0;
+}
+
+bool cmp_str(void *member_p, void *key_p)
+{
+    char *smember_p = member_p, *skey_p = key_p;
+
+    return 0 == strncmp(smember_p, skey_p, strlen(skey_p));
+}
+
+/*
+ * Test 9: FindAll
+ */
+int test_find_all()
+{
+    clist_t *ll = clist_new();
+
+    char *data[3] = { "cat", "cater", "caterpillar" };
+
+    for (int i=0; i<3; i++)
+        clist_push_back(ll, data[i]);
+
+    clist_t *data_list;
+    char *key;
+
+    for (int i=0; i<3; i++)
+    {
+        key = data[i];
+        data_list = clist_find_all(ll, key, cmp_str);
+
+        ASSERT_TRUE(data_list != NULL);
+        ASSERT_EQ(clist_count(data_list), 3-i);
+
+        clist_del(data_list);
+    }
+
+    key = "caster";
+    data_list = clist_find_all(ll, key, cmp_str);
+
+    ASSERT_TRUE(data_list != NULL);
+    ASSERT_EQ(clist_count(data_list), 0);
+    clist_del(data_list);
+
+    clist_del(ll);
+    ASSERT_EQ(mem_usage, 0);
+
     return 0;
 }
 
@@ -218,8 +340,12 @@ void test_clist (void)
         test_push_front_back,
         test_insert_at,
         test_traversal,
-        test_pop,
-        test_clear
+        test_remove,
+        test_clear,
+        test_extend,
+        test_append,
+        test_find,
+        test_find_all
     };
 
     const char* names[] = {
@@ -227,8 +353,12 @@ void test_clist (void)
         "push_front_back",
         "insert_at",
         "traversal",
-        "pop",
-        "clear"
+        "remove",
+        "clear",
+        "extend",
+        "append",
+        "find",
+        "find_all"
     };
 
     int num = sizeof(tests)/sizeof(tests[0]);
