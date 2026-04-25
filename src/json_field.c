@@ -108,7 +108,7 @@ json_t* json_field_get (json_t *jobj_p, const char *field_path)
     char    *name_p,
             *rem_path,
             *arr_ind;
-    int      arr_idx;
+    size_t   arr_idx;
 
     if (   !field_path
         ||  field_path[0] == '\0'
@@ -166,7 +166,7 @@ bool json_field_set_new (json_t **jobj_pp, const char *field_path, json_t *field
     char    *name_p,
             *rem_path = NULL,
             *arr_ind;
-    int      arr_idx;
+    size_t   arr_idx;
 
     if (!jobj_pp)
         goto FATAL;

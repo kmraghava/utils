@@ -41,12 +41,31 @@ extern "C" {
 #define list_init(ll)               \
     do                              \
     {                               \
-        ll.head.prev = NULL;        \
+        list_node_init(ll.head);    \
+        list_node_init(ll.tail);    \
         ll.head.next = &ll.tail;    \
         ll.tail.prev = &ll.head;    \
-        ll.tail.next = NULL;        \
-                                    \
         ll.count = 0;               \
+    }                               \
+    while (0)
+
+/*****************************************************************************
+ *
+ *  NAME        : list_node_init
+ *
+ *  DESCRIPTION : Initialize the given list node
+ *
+ *  PARAMS      : node - list_node_t
+ *
+ *  RETURNS     : Nothing
+ *
+ *****************************************************************************/
+#define list_node_init(node)        \
+    do                              \
+    {                               \
+        node.prev = NULL;           \
+        node.next = NULL;           \
+        node.mark = 0;              \
     }                               \
     while (0)
 
@@ -495,6 +514,21 @@ extern "C" {
 
 /*****************************************************************************
  *
+ *  NAME        : list_next
+ *                list_prev
+ *
+ *  DESCRIPTION : Returns pointer to next or previous node in the list
+ *
+ *  PARAMS      : node - list_node_t
+ *
+ *  RETURNS     : Pointers to next or previous node of the list
+ *
+ *****************************************************************************/
+#define list_next(node)  (node).next
+#define list_prev(node)  (node).prev
+
+/*****************************************************************************
+ *
  *  NAME        : list_first_member
  *                list_last_member
  *
@@ -512,8 +546,31 @@ extern "C" {
  *  NOTES       : If the list is empty, they return NULL
  *
  *****************************************************************************/
-#define list_first_member(ll, container_type, llnode)  (list_empty(ll) ? NULL : list_get(list_first(ll), container_type, llnode) )
-#define list_last_member(ll, container_type, llnode)   (list_empty(ll) ? NULL : list_get(list_last(ll), container_type, llnode) )
+#define list_first_member(ll, container_type, llnode)  ( list_empty(ll) ? NULL : list_get(list_first(ll), container_type, llnode) )
+#define list_last_member(ll, container_type, llnode)   ( list_empty(ll) ? NULL : list_get(list_last(ll),  container_type, llnode) )
+
+/*****************************************************************************
+ *
+ *  NAME        : list_next_member
+ *                list_prev_member
+ *
+ *  DESCRIPTION : Returns pointer to next or previous member of the list. It
+ *                is same as calling list_next() to get the next node and then
+ *                calling list_get to get a pointer to the container object.
+ *
+ *  PARAMS      : ll             - list_t
+ *                node           - list_node_t
+ *                container_type - Data type of the llnode's container.
+ *                llnode         - list_node_t
+ *                                 Member of container_type.
+ *
+ *  RETURNS     : Pointers to next or prev member of the list
+ *
+ *  NOTES       : If node or node.next is head or tail, they return NULL
+ *
+ *****************************************************************************/
+#define list_next_member(ll, node, container_type, llnode)  ( (list_next(node) && list_next(node) != list_tail(ll)) ? list_get(list_next(node), container_type, llnode) : NULL )
+#define list_prev_member(ll, node, container_type, llnode)  ( (list_prev(node) && list_prev(node) != list_head(ll)) ? list_get(list_prev(node), container_type, llnode) : NULL )
 
 /*****************************************************************************
  *

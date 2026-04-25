@@ -1,9 +1,10 @@
 
 # Compiler
 CC := gcc
+AR := ar
 
 # Package name
-pkg_name := utils
+pkg_name := kmrUtils
 
 # Source code directory
 src_dir := src
@@ -11,17 +12,17 @@ src_dir := src
 # Build directory
 build_dir := build
 
+# Library name
+lib_name := $(build_dir)/lib$(pkg_name)
+
+# Install directory
+install_dir := /usr/local
+
 # Compiler flags
-CFLAGS :=
+CFLAGS := -Wall -Wextra -g -fPIC
 
 # Defines
 DEFINES :=
-
-# Linker flags
-LDFLAGS :=
-
-# Other libraries
-LDLIBS := -ljansson
 
 # Includes
 includes := -Iinclude
@@ -37,13 +38,40 @@ sources := $(src_dir)/clist.c \
 # Object files
 objects := $(patsubst %.c, $(build_dir)/%.o, $(sources))
 
-all: $(objects)
+# make all target
+all: $(lib_name).so $(lib_name).a
+
+$(lib_name).so: $(objects)
+	$(CC) -shared -o $@ $^
+
+$(lib_name).a: $(objects)
+	$(AR) rcs $@ $^
 
 $(build_dir)/%.o: %.c
 	mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(DEFINES) $(includes) -o $@ -c $<
 
-# Test sources
+#make install target
+install: all
+	mkdir -p $(install_dir)/lib
+	mkdir -p $(install_dir)/include/$(pkg_name)
+
+	cp $(lib_name).so $(install_dir)/lib/
+	cp $(lib_name).a  $(install_dir)/lib/
+
+	cp  include/* $(install_dir)/include/$(pkg_name)/
+
+
+
+
+######################################################################
+#  TESTING
+######################################################################
+
+# Libraries to compile with
+TLDLIBS := -ljansson -lkmrUtils
+
+# sources
 test_src_dir := test
 
 # Build directory for unit tests
@@ -62,16 +90,15 @@ test_sources := $(test_src_dir)/tclist.c \
 #unit test object files
 test_objects := $(patsubst %.c, $(test_build_dir)/%.o, $(test_sources))
 
-test_exec := $(test_build_dir)/unit_test
+#Test target
+test: $(test_build_dir)/unit_test
 
-test: $(test_exec)
-
-$(test_exec): $(test_objects) $(objects)
-	$(CC) -o $@ $^ $(LDLIBS) $(LDFLAGS)
+$(test_build_dir)/unit_test: $(test_objects)
+	$(CC) -o $@ $^ $(TLDLIBS)
 
 $(test_build_dir)/%.o: %.c
 	mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $(DEFINES) $(includes) -o $@ -c $<
+	$(CC) -o $@ -c $<
 
 clean:
 	rm -rf $(build_dir)

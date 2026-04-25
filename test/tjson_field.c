@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include "json_field.h"
+#include "kmrUtils/json_field.h"
 
 static void test_json_field_get() {
     printf("Running test_json_field_get...\n");

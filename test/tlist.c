@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "list.h"
+#include "kmrUtils/list.h"
 
 /* simple container used across tests */
 typedef struct item {

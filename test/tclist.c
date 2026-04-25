@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "clist.h"
+#include "kmrUtils/clist.h"
 
 /*
  * Simple ASSERT macros
@@ -27,7 +27,7 @@
 /*
  * Test 1: Create/Delete
  */
-int test_create_delete()
+static int test_create_delete()
 {
     clist_t *ll = clist_new();
     ASSERT_TRUE(ll != NULL);
@@ -43,7 +43,7 @@ int test_create_delete()
 /*
  * Test 2: Push front/back
  */
-int test_push_front_back()
+static int test_push_front_back()
 {
     clist_t *ll = clist_new();
 
@@ -77,7 +77,7 @@ int test_push_front_back()
 /*
  * Test 3: Insert at arbitrary positions
  */
-int test_insert_at()
+static int test_insert_at()
 {
     clist_t *ll = clist_new();
 
@@ -105,7 +105,7 @@ int test_insert_at()
 /*
  * Test 4: Forward and reverse traversal
  */
-int test_traversal()
+static int test_traversal()
 {
     clist_t *ll = clist_new();
 
@@ -128,7 +128,7 @@ int test_traversal()
 /*
  * Test 5: Remove operations
  */
-int test_remove()
+static int test_remove()
 {
     clist_t *ll = clist_new();
 
@@ -162,7 +162,7 @@ int test_remove()
 /*
  * Test 6: Clear
  */
-int test_clear()
+static int test_clear()
 {
     clist_t *ll = clist_new();
 
@@ -185,7 +185,7 @@ int test_clear()
 /*
  * Test 7: Extend
  */
-int test_extend()
+static int test_extend()
 {
     clist_t *ll1 = clist_new(), *ll2 = clist_new();
 
@@ -209,7 +209,7 @@ int test_extend()
 /*
  * Test 8: Append
  */
-int test_append()
+static int test_append()
 {
     clist_t *ll1 = clist_new(), *ll2 = clist_new();
 
@@ -230,7 +230,7 @@ int test_append()
     return 0;
 }
 
-bool cmp_int (void *member_p, void *key_p)
+static bool cmp_int (void *member_p, void *key_p)
 {
     int *imember_p = member_p, *ikey_p = key_p;
 
@@ -240,7 +240,7 @@ bool cmp_int (void *member_p, void *key_p)
 /*
  * Test 9: Find
  */
-int test_find()
+static int test_find()
 {
     clist_t *ll = clist_new();
 
@@ -271,7 +271,7 @@ int test_find()
     return 0;
 }
 
-bool cmp_str(void *member_p, void *key_p)
+static bool cmp_str(void *member_p, void *key_p)
 {
     char *smember_p = member_p, *skey_p = key_p;
 
@@ -281,7 +281,7 @@ bool cmp_str(void *member_p, void *key_p)
 /*
  * Test 9: FindAll
  */
-int test_find_all()
+static int test_find_all()
 {
     clist_t *ll = clist_new();
 

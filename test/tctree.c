@@ -1,432 +1,229 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <assert.h>
+#include <stdio.h>
+#include <string.h>
+#include "kmrUtils/ctree.h"
 
-#include "ctree.h"
-
-/* -----------------------------
- * Test Helpers
- * ----------------------------- */
-
-typedef struct {
-    int id;
-} test_obj_t;
-
-static bool match_by_id(void *member_p, void *key_p)
+static bool match_int(void *member_p, void *key_p)
 {
-    test_obj_t *obj = (test_obj_t *)member_p;
-    int *key = (int *)key_p;
-
-    return obj && key && (obj->id == *key);
+    return *(int*)member_p == *(int*)key_p;
 }
 
-static test_obj_t* new_obj(int id)
-{
-    test_obj_t *o = malloc(sizeof(*o));
-    o->id = id;
-    return o;
-}
+/* ---------------- BASIC CREATION ---------------- */
 
-/* -----------------------------
- * Tests
- * ----------------------------- */
-
-void test_ctree_create_destroy()
+static void test_basic_create()
 {
-    ctree_t *tree = ctree_new();
-    assert(tree != NULL);
+    ctree_t *tree = ctree_new(NULL);
+    assert(tree);
+    assert(ctree_count(tree) == 0);
+    assert(ctree_level(tree) == 0);
 
     tree = ctree_del(tree);
     assert(tree == NULL);
 }
 
-void test_ctree_add_root_nodes()
+/* ---------------- NODE INSERT + COUNT ---------------- */
+
+static void test_node_insert_and_count()
 {
-    ctree_t *tree = ctree_new();
+    ctree_t *tree = ctree_new(NULL);
 
-    test_obj_t *o1 = new_obj(1);
-    test_obj_t *o2 = new_obj(2);
+    int a=1, b=2, c=3;
 
-    ctree_node_t *n1 = ctree_add(tree, NULL, o1);
-    ctree_node_t *n2 = ctree_add(tree, NULL, o2);
-
-    assert(n1 != NULL);
-    assert(n2 != NULL);
-    assert(ctree_member(n1) == o1);
-    assert(ctree_member(n2) == o2);
-
-    ctree_del(tree);
-    free(o1);
-    free(o2);
-}
-
-void test_ctree_add_children()
-{
-    ctree_t *tree = ctree_new();
-
-    test_obj_t *root_obj = new_obj(10);
-    ctree_node_t *root = ctree_add(tree, NULL, root_obj);
-
-    test_obj_t *child1_obj = new_obj(11);
-    test_obj_t *child2_obj = new_obj(12);
-
-    ctree_node_t *child1 = ctree_add(tree, root, child1_obj);
-    ctree_node_t *child2 = ctree_add(tree, root, child2_obj);
-
-    assert(child1 != NULL);
-    assert(child2 != NULL);
-
-    assert(ctree_member(child1) == child1_obj);
-    assert(ctree_member(child2) == child2_obj);
-
-    ctree_del(tree);
-    free(root_obj);
-    free(child1_obj);
-    free(child2_obj);
-}
-
-void test_ctree_find_basic()
-{
-    ctree_t *tree = ctree_new();
-
-    test_obj_t *o1 = new_obj(1);
-    test_obj_t *o2 = new_obj(2);
-    test_obj_t *o3 = new_obj(3);
-
-    ctree_node_t *n1 = ctree_add(tree, NULL, o1);
-    ctree_node_t *n2 = ctree_add(tree, n1, o2);
-    ctree_add(tree, n2, o3);
-
-    int key = 2;
-    void *res = ctree_find(tree, NULL, -1, &key, match_by_id);
-
-    assert(res == o2);
-
-    ctree_del(tree);
-    free(o1);
-    free(o2);
-    free(o3);
-}
-
-void test_ctree_find_with_level_limit()
-{
-    ctree_t *tree = ctree_new();
-
-    test_obj_t *o1 = new_obj(1);
-    test_obj_t *o2 = new_obj(2);
-
-    ctree_node_t *n1 = ctree_add(tree, NULL, o1);
-    ctree_add(tree, n1, o2);
-
-    int key = 2;
-
-    /* limit search to level 0 -> should NOT find */
-    void *res = ctree_find(tree, NULL, 0, &key, match_by_id);
-    assert(res == NULL);
-
-    /* allow deeper search */
-    res = ctree_find(tree, NULL, -1, &key, match_by_id);
-    assert(res == o2);
-
-    ctree_del(tree);
-    free(o1);
-    free(o2);
-}
-
-void test_ctree_remove_node()
-{
-    ctree_t *tree = ctree_new();
-
-    test_obj_t *o1 = new_obj(1);
-    test_obj_t *o2 = new_obj(2);
-
-    ctree_node_t *root = ctree_add(tree, NULL, o1);
-    ctree_node_t *child = ctree_add(tree, root, o2);
-
-    /* remove child */
-    ctree_rem_node(tree, child);
-
-    int key = 2;
-    void *res = ctree_find(tree, NULL, -1, &key, match_by_id);
-
-    assert(res == NULL);
-
-    ctree_del(tree);
-    free(o1);
-    free(o2);
-}
-
-void test_ctree_remove_subtree()
-{
-    ctree_t *tree = ctree_new();
-
-    test_obj_t *o1 = new_obj(1);
-    test_obj_t *o2 = new_obj(2);
-    test_obj_t *o3 = new_obj(3);
-
-    ctree_node_t *root = ctree_add(tree, NULL, o1);
-    ctree_node_t *child = ctree_add(tree, root, o2);
-    ctree_add(tree, child, o3);
-
-    /* remove subtree at child */
-    ctree_rem_node(tree, child);
-
-    int key2 = 2;
-    int key3 = 3;
-
-    assert(ctree_find(tree, NULL, -1, &key2, match_by_id) == NULL);
-    assert(ctree_find(tree, NULL, -1, &key3, match_by_id) == NULL);
-
-    ctree_del(tree);
-    free(o1);
-    free(o2);
-    free(o3);
-}
-
-void test_ctree_find_all_basic()
-{
-    ctree_t *tree = ctree_new();
-
-    test_obj_t *o1 = new_obj(1);
-    test_obj_t *o2 = new_obj(1);  // duplicate key
-
-    ctree_add(tree, NULL, o1);
-    ctree_add(tree, NULL, o2);
-
-    int key = 1;
-
-    clist_t *list = ctree_find_all(tree, NULL, -1, &key, match_by_id);
-
-    assert(list != NULL);
-
-    /* You may want to assert list size if API exists */
-    /* e.g., assert(clist_size(list) == 2); */
-
-    clist_del(list);
-    ctree_del(tree);
-    free(o1);
-    free(o2);
-}
-
-void test_ctree_null_safety()
-{
-    int key = 1;
-
-    /* Should not crash */
-    assert(ctree_find(NULL, NULL, -1, &key, match_by_id) == NULL);
-    assert(ctree_find(NULL, NULL, -1, NULL, match_by_id) == NULL);
-    assert(ctree_find(NULL, NULL, -1, &key, NULL) == NULL);
-}
-
-void test_ctree_node_count_basic()
-{
-    ctree_t *tree = ctree_new();
-
-    test_obj_t *o1 = new_obj(1);
-    test_obj_t *o2 = new_obj(2);
-    test_obj_t *o3 = new_obj(3);
-
-    ctree_node_t *root = ctree_add(tree, NULL, o1);
-    assert(ctree_node_count(root) == 1);
-
-    ctree_node_t *child = ctree_add(tree, root, o2);
-    assert(ctree_node_count(root) == 2);
-    assert(ctree_node_count(child) == 1);
-
-    ctree_node_t *grandchild = ctree_add(tree, child, o3);
-    assert(ctree_node_count(child) == 2);
-    assert(ctree_node_count(root) == 3);
+    ctree_node_t *n1 = ctree_node_new(tree, &a);
+    ctree_node_t *n2 = ctree_node_new(tree, &b);
+    ctree_node_t *n3 = ctree_node_new(tree, &c);
 
     assert(ctree_count(tree) == 3);
+    assert(ctree_node_count(n1) == 1);
 
-    ctree_del(tree);
-    free(o1);
-    free(o2);
-    free(o3);
+    tree = ctree_del(tree);
 }
 
-void test_ctree_node_count_multiple_children()
+/* ---------------- SUBTREE + COUNT PROPAGATION ---------------- */
+
+static void test_subtree_count_propagation()
 {
-    ctree_t *tree = ctree_new();
+    ctree_t *root = ctree_new(NULL);
 
-    test_obj_t *o1 = new_obj(1);
-    test_obj_t *o2 = new_obj(2);
-    test_obj_t *o3 = new_obj(3);
-    test_obj_t *o4 = new_obj(4);
+    int a=1, b=2, c=3;
 
-    ctree_node_t *root = ctree_add(tree, NULL, o1);
+    ctree_node_t *n1 = ctree_node_new(root, &a);
 
-    ctree_node_t *c1 = ctree_add(tree, root, o2);
-    ctree_node_t *c2 = ctree_add(tree, root, o3);
+    ctree_t *sub = ctree_new(n1);
+    ctree_node_new(sub, &b);
+    ctree_node_new(sub, &c);
 
-    /* root should see both children */
-    assert(ctree_node_count(root) == 3);
+    assert(ctree_count(sub) == 2);
+    assert(ctree_node_count(n1) == 3);  // itself + subtree
+    assert(ctree_count(root) == 3);
 
-    /* add grandchild under c1 */
-    ctree_add(tree, c1, o4);
-
-    assert(ctree_node_count(c1) == 2);
-    assert(ctree_node_count(root) == 4);
-
-    assert(ctree_count(tree) == 4);
-
-    ctree_del(tree);
-    free(o1);
-    free(o2);
-    free(o3);
-    free(o4);
+    root = ctree_del(root);
 }
 
-void test_ctree_node_count_after_removal()
+/* ---------------- NODE DELETE ---------------- */
+
+static void test_node_delete()
 {
-    ctree_t *tree = ctree_new();
+    ctree_t *tree = ctree_new(NULL);
 
-    test_obj_t *o1 = new_obj(1);
-    test_obj_t *o2 = new_obj(2);
-    test_obj_t *o3 = new_obj(3);
-    test_obj_t *o4 = new_obj(4);
+    int a=1, b=2;
 
-    ctree_node_t *root = ctree_add(tree, NULL, o1);
-    ctree_node_t *c1 = ctree_add(tree, root, o2);
-    ctree_node_t *c2 = ctree_add(tree, root, o3);
-    ctree_node_t *g1 = ctree_add(tree, c1, o4);
-
-    assert(ctree_count(tree) == 4);
-
-    /*
-     * Tree:
-     * root
-     * ├── c1
-     * │   └── g1
-     * └── c2
-     *
-     * Counts:
-     * g1 = 0
-     * c1 = 1
-     * c2 = 0
-     * root = 3
-     */
-
-    assert(ctree_node_count(root) == 4);
-    assert(ctree_node_count(c1) == 2);
-
-    /* remove subtree c1 (removes c1 + g1 = 2 nodes) */
-    ctree_rem_node(tree, c1);
-
-    assert(ctree_node_count(root) == 2);   // only c2 remains
+    ctree_node_t *n1 = ctree_node_new(tree, &a);
+    ctree_node_t *n2 = ctree_node_new(tree, &b);
 
     assert(ctree_count(tree) == 2);
 
-    ctree_del(tree);
-    free(o1);
-    free(o2);
-    free(o3);
-    free(o4);
+    ctree_node_del(n1);
+
+    assert(ctree_count(tree) == 1);
+
+    tree = ctree_del(tree);
 }
 
-void test_ctree_node_count_remove_leaf_vs_subtree()
+/* ---------------- SUBTREE REPLACEMENT ---------------- */
+
+static void test_subtree_replace()
 {
-    ctree_t *tree = ctree_new();
+    ctree_t *root = ctree_new(NULL);
+    int a=1, b=2, c=3;
 
-    test_obj_t *o1 = new_obj(1);
-    test_obj_t *o2 = new_obj(2);
-    test_obj_t *o3 = new_obj(3);
+    ctree_node_t *n1 = ctree_node_new(root, &a);
 
-    ctree_node_t *root = ctree_add(tree, NULL, o1);
-    ctree_node_t *c1 = ctree_add(tree, root, o2);
-    ctree_node_t *c2 = ctree_add(tree, root, o3);
+    ctree_t *sub1 = ctree_new(n1);
+    ctree_node_new(sub1, &b);
 
-    assert(ctree_node_count(root) == 3);
+    assert(ctree_count(root) == 2);
 
-    /* remove leaf */
-    ctree_rem_node(tree, c2);
-    assert(ctree_node_count(root) == 2);
+    ctree_t *sub2 = ctree_new(NULL);
+    ctree_node_new(sub2, &c);
 
-    /* remove remaining child */
-    ctree_rem_node(tree, c1);
-    assert(ctree_node_count(root) == 1);
+    ctree_node_set_subtree(n1, sub2);
 
-    ctree_rem_node(tree, root);
-    assert(ctree_count(tree) == 0);
+    assert(ctree_count(root) == 2); // replaced subtree
 
-    ctree_del(tree);
-    free(o1);
-    free(o2);
-    free(o3);
+    root = ctree_del(root);
 }
 
-void test_ctree_node_count_mixed_operations()
+/* ---------------- LEVEL CHECK ---------------- */
+
+static void test_levels()
 {
-    ctree_t *tree = ctree_new();
+    ctree_t *root = ctree_new(NULL);
+    int a=1, b=2;
 
-    test_obj_t *objs[6];
-    for (int i = 0; i < 6; i++)
-        objs[i] = new_obj(i);
+    ctree_node_t *n1 = ctree_node_new(root, &a);
+    ctree_t *sub = ctree_new(n1);
+    ctree_node_t *n2 = ctree_node_new(sub, &b);
 
-    ctree_node_t *root = ctree_add(tree, NULL, objs[0]);
-    ctree_node_t *a = ctree_add(tree, root, objs[1]);
-    ctree_node_t *b = ctree_add(tree, root, objs[2]);
-    ctree_node_t *c = ctree_add(tree, a, objs[3]);
-    ctree_node_t *d = ctree_add(tree, a, objs[4]);
-    ctree_node_t *e = ctree_add(tree, c, objs[5]);
+    assert(ctree_level(root) == 0);
+    assert(ctree_node_level(n1) == 0);
+    assert(ctree_level(sub) == 1);
+    assert(ctree_node_level(n2) == 1);
 
-    /*
-     * Structure:
-     * root
-     * ├── a
-     * │   ├── c
-     * │   │   └── e
-     * │   └── d
-     * └── b
-     *
-     * Total descendants of root = 5
-     */
-
-    assert(ctree_node_count(root) == 6);
-    assert(ctree_node_count(a) == 4);
-    assert(ctree_node_count(c) == 2);
-
-    /* remove c subtree (c + e = 2 nodes) */
-    ctree_rem_node(tree, c);
-
-    assert(ctree_node_count(a) == 2);      // only d remains
-    assert(ctree_node_count(root) == 4);   // a,d,b
-
-    /* remove b */
-    ctree_rem_node(tree, b);
-    assert(ctree_node_count(root) == 3);
-
-    ctree_rem_node(tree, root);
-    assert(ctree_count(tree) == 0);
-
-    ctree_del(tree);
-
-    for (int i = 0; i < 6; i++)
-        free(objs[i]);
+    root = ctree_del(root);
 }
 
-/* -----------------------------
- * Main
- * ----------------------------- */
+/* ---------------- TRAVERSAL ---------------- */
+
+static void test_traversal()
+{
+    ctree_t *tree = ctree_new(NULL);
+
+    int a=1, b=2, c=3;
+
+    ctree_node_t *n1 = ctree_node_new(tree, &a);
+    ctree_node_t *n2 = ctree_node_new(tree, &b);
+    ctree_node_t *n3 = ctree_node_new(tree, &c);
+
+    assert(ctree_first_node(tree) == n1);
+    assert(ctree_last_node(tree) == n3);
+
+    assert(ctree_node_next(n1) == n2);
+    assert(ctree_node_next(n2) == n3);
+    assert(ctree_node_next(n3) == NULL);
+
+    tree = ctree_del(tree);
+}
+
+/* ---------------- FIND ---------------- */
+
+static void test_find()
+{
+    ctree_t *root = ctree_new(NULL);
+
+    int a=1, b=2, c=3;
+
+    ctree_node_t *n1 = ctree_node_new(root, &a);
+    ctree_t *sub = ctree_new(n1);
+    ctree_node_new(sub, &b);
+    ctree_node_new(sub, &c);
+
+    int key = 2;
+
+    void *res = ctree_find(root, -1, &key, match_int);
+    assert(res == &b);
+
+    root = ctree_del(root);
+}
+
+/* ---------------- FIND WITH DEPTH LIMIT ---------------- */
+
+static void test_find_depth_limit()
+{
+    ctree_t *root = ctree_new(NULL);
+
+    int a=1, b=2;
+
+    ctree_node_t *n1 = ctree_node_new(root, &a);
+    ctree_t *sub = ctree_new(n1);
+    ctree_node_new(sub, &b);
+
+    int key = 2;
+
+    void *res = ctree_find(root, 1, &key, match_int);
+    assert(res == NULL); // depth limited
+
+    root = ctree_del(root);
+}
+
+/* ---------------- FIND ALL ---------------- */
+
+static void test_find_all()
+{
+    ctree_t *root = ctree_new(NULL);
+
+    int a=1, b=2, c=2;
+
+    ctree_node_new(root, &a);
+    ctree_node_new(root, &b);
+    ctree_node_new(root, &c);
+
+    int key = 2;
+
+    clist_t *list = ctree_find_all(root, -1, &key, match_int);
+    assert(list);
+
+    // Expect 2 matches
+    assert(clist_count(list) == 2);
+
+    clist_del(list);
+    root = ctree_del(root);
+}
+
+/* ---------------- MAIN ---------------- */
 
 void test_ctree()
 {
-    test_ctree_create_destroy();
-    test_ctree_add_root_nodes();
-    test_ctree_add_children();
-    test_ctree_find_basic();
-    test_ctree_find_with_level_limit();
-    test_ctree_remove_node();
-    test_ctree_remove_subtree();
-    test_ctree_find_all_basic();
-    test_ctree_null_safety();
-    test_ctree_node_count_basic();
-    test_ctree_node_count_multiple_children();
-    test_ctree_node_count_after_removal();
-    test_ctree_node_count_remove_leaf_vs_subtree();
-    test_ctree_node_count_mixed_operations();
+    test_basic_create();
+    test_node_insert_and_count();
+    test_subtree_count_propagation();
+    test_node_delete();
+    test_subtree_replace();
+    test_levels();
+    test_traversal();
+    test_find();
+    test_find_depth_limit();
+    test_find_all();
 
-    printf("All ctree tests passed!\n");
+    printf("All tests passed.\n");
 }
-

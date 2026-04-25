@@ -7,7 +7,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-#include "mac_addr.h"
+#include "kmrUtils/mac_addr.h"
 
 // Prototypes (from your code)
 const char* mac_addr_str(mac_addr_t addr, char *buffer_p, mac_addr_fmt_separator_e separator);
