@@ -81,11 +81,11 @@ static void test_push_front_and_insert_after_before(void) {
     /* now insert c before a (i.e., into middle) */
     list_insert_before(l, list_first(l)->next /* which is a */, c->node);
     /* Validate order via foreach_member */
-    list_node_t *np;
+
     item_t *m;
     int idx = 0;
     int vals[3];
-    list_foreach_member(l, np, item_t, node, m) {
+    list_foreach_member(l, item_t, node, m) {
         vals[idx++] = m->value;
     }
     /* Values should be: b, c, a  => 20,30,10 */
@@ -210,9 +210,8 @@ static void test_iteration_macros(void) {
 
     /* test foreach_member order */
     int idx = 0;
-    list_node_t *np;
     item_t *m;
-    list_foreach_member(l, np, item_t, node, m) {
+    list_foreach_member(l, item_t, node, m) {
         assert(m->value == ++idx);
     }
     assert(idx == 5);
@@ -308,10 +307,10 @@ static void test_append(void) {
     assert(list_empty(from));
     /* verify order in 'to': c, a, b */
     int seen1 = 0, seen2 = 0, seen100 = 0;
-    list_node_t *np;
+
     item_t *m;
     int idx = 1;
-    list_foreach_member(to, np, item_t, node, m) {
+    list_foreach_member(to, item_t, node, m) {
         if (m->value == 1) seen1 = idx;
         else if (m->value == 2) seen2 = idx;
         else if (m->value == 100) seen100 = idx;

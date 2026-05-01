@@ -436,10 +436,10 @@ extern "C" {
  *  RETURNS     : Pointer to container object
  *
  *****************************************************************************/
-#define list_get(node_p, container_type, llnode)                                    \
-    ({                                                                              \
-        const __typeof__( ((container_type *)0)->llnode ) *__mptr = (node_p);       \
-        (container_type *)( (char *)__mptr - offsetof(container_type, llnode) );    \
+#define list_get(node_p, container_type, llnode)                                 \
+    ({                                                                           \
+        const __typeof__( ((container_type *)0)->llnode ) *__mptr = (node_p);    \
+        (container_type *)( (char *)__mptr - offsetof(container_type, llnode) ); \
     })
 
 /*****************************************************************************
@@ -643,7 +643,7 @@ extern "C" {
  *
  *****************************************************************************/
 #define list_foreach_marked(ll, node_p) \
-    for (node_p = ll.head.next; node_p != list_tail(ll); node_p = node_p->next) \
+    list_foreach(ll, node_p) \
         if (node_p->mark == 1)
 
 /*****************************************************************************
@@ -653,7 +653,6 @@ extern "C" {
  *  DESCRIPTION : Loops over each member of the given list
  *
  *  PARAMS      : ll             - list_t
- *                node_p         - list_node_t*
  *                container_type - Data type of the llnode's container.
  *                llnode         - list_node_t
  *                                 Member of container_type.
@@ -662,8 +661,9 @@ extern "C" {
  *  RETURNS     : Nothing
  *
  *****************************************************************************/
-#define list_foreach_member(ll, node_p, container_type, llnode, member_p) \
-    for (node_p = ll.head.next; node_p != list_tail(ll) && (member_p = list_get(node_p, container_type, llnode)); node_p = node_p->next)
+#define list_foreach_member(ll, container_type, llnode, member_p) \
+    for (list_node_t *__node_p = ll.head.next; __node_p != list_tail(ll); __node_p = __node_p->next) \
+        if ((member_p = list_get(__node_p, container_type, llnode)))
 
 /*****************************************************************************
  *
@@ -672,7 +672,6 @@ extern "C" {
  *  DESCRIPTION : Loops over each marked member of the given list
  *
  *  PARAMS      : ll             - list_t
- *                node_p         - list_node_t*
  *                container_type - Data type of the llnode's container.
  *                llnode         - list_node_t
  *                                 Member of container_type.
@@ -681,9 +680,11 @@ extern "C" {
  *  RETURNS     : Nothing
  *
  *****************************************************************************/
-#define list_foreach_marked_member(ll, node_p, container_type, llnode, member_p) \
-    for (node_p = ll.head.next; node_p != list_tail(ll) && (member_p = list_get(node_p, container_type, llnode)); node_p = node_p->next) \
-        if (node_p->mark == 1)
+#define list_foreach_marked_member(ll, container_type, llnode, member_p) \
+    for (list_node_t *__node_p = ll.head.next; __node_p != list_tail(ll); __node_p = __node_p->next) \
+        if (   __node_p->mark == 1 \
+            && (member_p = list_get(__node_p, container_type, llnode)) \
+           )
 
 /*****************************************************************************
  *
@@ -724,20 +725,19 @@ extern "C" {
  *  RETURNS     : Nothing
  *
  *****************************************************************************/
-#define list_iterate_members(ll, container_type, llnode, cb)            \
-    do                                                                  \
-    {                                                                   \
-        list_node_t     *__iptr;                                        \
-        container_type  *__mptr;                                        \
-                                                                        \
-        list_foreach_member(ll, __iptr, container_type, llnode, __mptr) \
-            cb(__mptr);                                                 \
-    }                                                                   \
+#define list_iterate_members(ll, container_type, llnode, cb)    \
+    do                                                          \
+    {                                                           \
+        container_type  *__mptr;                                \
+                                                                \
+        list_foreach_member(ll, container_type, llnode, __mptr) \
+            cb(__mptr);                                         \
+    }                                                           \
     while (0)
 
 /*****************************************************************************
  *
- *  NAME        : list_iterate
+ *  NAME        : list_iterate_marked
  *
  *  DESCRIPTION : Iterates through marked nodes in the given list and calls
  *                the given callback for each node such.
@@ -748,20 +748,19 @@ extern "C" {
  *  RETURNS     : Nothing
  *
  *****************************************************************************/
-#define list_iterate_marked(ll, cb) \
-    do                              \
-    {                               \
-        list_node_t  *__iptr;       \
-                                    \
-        list_foreach(ll, __iptr)    \
-            if (__iptr->mark == 1)  \
-                cb(__iptr);         \
-    }                               \
+#define list_iterate_marked(ll, cb)     \
+    do                                  \
+    {                                   \
+        list_node_t  *__iptr;           \
+                                        \
+        list_foreach_marked(ll, __iptr) \
+            cb(__iptr);                 \
+    }                                   \
     while (0)
 
 /*****************************************************************************
  *
- *  NAME        : list_iterate_members
+ *  NAME        : list_iterate_marked_members
  *
  *  DESCRIPTION : Iterates through the members whose nodes are marked in the
  *                given list and calls the given callback for each member.
@@ -778,12 +777,10 @@ extern "C" {
 #define list_iterate_marked_members(ll, container_type, llnode, cb)     \
     do                                                                  \
     {                                                                   \
-        list_node_t     *__iptr;                                        \
         container_type  *__mptr;                                        \
                                                                         \
-        list_foreach_member(ll, __iptr, container_type, llnode, __mptr) \
-            if (__iptr->mark == 1)                                      \
-                cb(__mptr);                                             \
+        list_foreach_marked_member(ll, container_type, llnode, __mptr)  \
+            cb(__mptr);                                                 \
     }                                                                   \
     while (0)
 

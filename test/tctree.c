@@ -160,28 +160,8 @@ static void test_find()
 
     int key = 2;
 
-    void *res = ctree_find(root, -1, &key, match_int);
+    void *res = ctree_find(root, &key, match_int);
     assert(res == &b);
-
-    root = ctree_del(root);
-}
-
-/* ---------------- FIND WITH DEPTH LIMIT ---------------- */
-
-static void test_find_depth_limit()
-{
-    ctree_t *root = ctree_new(NULL);
-
-    int a=1, b=2;
-
-    ctree_node_t *n1 = ctree_node_new(root, &a);
-    ctree_t *sub = ctree_new(n1);
-    ctree_node_new(sub, &b);
-
-    int key = 2;
-
-    void *res = ctree_find(root, 1, &key, match_int);
-    assert(res == NULL); // depth limited
 
     root = ctree_del(root);
 }
@@ -200,7 +180,7 @@ static void test_find_all()
 
     int key = 2;
 
-    clist_t *list = ctree_find_all(root, -1, &key, match_int);
+    clist_t *list = ctree_find_all(root, &key, match_int);
     assert(list);
 
     // Expect 2 matches
@@ -222,7 +202,6 @@ void test_ctree()
     test_levels();
     test_traversal();
     test_find();
-    test_find_depth_limit();
     test_find_all();
 
     printf("All tests passed.\n");
