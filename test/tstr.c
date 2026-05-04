@@ -425,6 +425,252 @@ static void test_str_ssplit(void)
     str_del(s);
 }
 
+static void test_replace_null_arguments(void)
+{
+    str_t *s = str_new("hello");
+
+    assert(str_replace(NULL, "l", "x", 1) == NULL);
+    assert(str_replace(s, NULL, "x", 1) == NULL);
+    assert(str_replace(s, "l", NULL, 1) == NULL);
+
+    str_del(s);
+}
+
+static void test_replace_empty_string_singleton(void)
+{
+    str_t *r = str_replace(empty_str(), "a", "b", 1);
+
+    assert(r == empty_str());
+}
+
+static void test_replace_n_zero_returns_clone(void)
+{
+    str_t *s = str_new("hello world");
+    str_t *r = str_replace(s, "world", "earth", 0);
+
+    assert(r != NULL);
+    assert(r != s);
+    assert(strcmp(str_cstr(r), "hello world") == 0);
+    assert(str_length(r) == strlen("hello world"));
+
+    str_del(s);
+    str_del(r);
+}
+
+static void test_replace_substring_not_found(void)
+{
+    str_t *s = str_new("abcdef");
+    str_t *r = str_replace(s, "xyz", "123", 5);
+
+    assert(r != NULL);
+    assert(r != s);
+    assert(strcmp(str_cstr(r), "abcdef") == 0);
+    assert(str_length(r) == 6);
+
+    str_del(s);
+    str_del(r);
+}
+
+static void test_replace_replace_single_occurrence(void)
+{
+    str_t *s = str_new("abc abc abc");
+    str_t *r = str_replace(s, "abc", "xyz", 1);
+
+    assert(r != NULL);
+    assert(strcmp(str_cstr(r), "xyz abc abc") == 0);
+    assert(str_length(r) == strlen("xyz abc abc"));
+
+    str_del(s);
+    str_del(r);
+}
+
+static void test_replace_replace_multiple_occurrences(void)
+{
+    str_t *s = str_new("abc abc abc");
+    str_t *r = str_replace(s, "abc", "xyz", 2);
+
+    assert(r != NULL);
+    assert(strcmp(str_cstr(r), "xyz xyz abc") == 0);
+    assert(str_length(r) == strlen("xyz xyz abc"));
+
+    str_del(s);
+    str_del(r);
+}
+
+static void test_replace_replace_all_occurrences_with_negative_n(void)
+{
+    str_t *s = str_new("one two one two one");
+    str_t *r = str_replace(s, "one", "1", -1);
+
+    assert(r != NULL);
+    assert(strcmp(str_cstr(r), "1 two 1 two 1") == 0);
+    assert(str_length(r) == strlen("1 two 1 two 1"));
+
+    str_del(s);
+    str_del(r);
+}
+
+static void test_replace_replace_when_n_exceeds_occurrences(void)
+{
+    str_t *s = str_new("cat dog cat");
+    str_t *r = str_replace(s, "cat", "fox", 10);
+
+    assert(r != NULL);
+    assert(strcmp(str_cstr(r), "fox dog fox") == 0);
+    assert(str_length(r) == strlen("fox dog fox"));
+
+    str_del(s);
+    str_del(r);
+}
+
+static void test_replace_replacement_shorter_than_substring(void)
+{
+    str_t *s = str_new("aaaaaa");
+    str_t *r = str_replace(s, "aa", "b", -1);
+
+    assert(r != NULL);
+    assert(strcmp(str_cstr(r), "bbb") == 0);
+    assert(str_length(r) == 3);
+
+    str_del(s);
+    str_del(r);
+}
+
+static void test_replace_replacement_longer_than_substring(void)
+{
+    str_t *s = str_new("xx yy xx");
+    str_t *r = str_replace(s, "xx", "LONG", -1);
+
+    assert(r != NULL);
+    assert(strcmp(str_cstr(r), "LONG yy LONG") == 0);
+    assert(str_length(r) == strlen("LONG yy LONG"));
+
+    str_del(s);
+    str_del(r);
+}
+
+static void test_replace_replace_with_empty_replacement(void)
+{
+    str_t *s = str_new("abc123abc123");
+    str_t *r = str_replace(s, "123", "", -1);
+
+    assert(r != NULL);
+    assert(strcmp(str_cstr(r), "abcabc") == 0);
+    assert(str_length(r) == 6);
+
+    str_del(s);
+    str_del(r);
+}
+
+static void test_replace_empty_substring_and_empty_replacement(void)
+{
+    str_t *s = str_new("hello");
+    str_t *r = str_replace(s, "", "", 5);
+
+    assert(r != NULL);
+    assert(r != s);
+    assert(strcmp(str_cstr(r), "hello") == 0);
+    assert(str_length(r) == 5);
+
+    str_del(s);
+    str_del(r);
+}
+
+static void test_replace_empty_substring_insert_prefix_once(void)
+{
+    str_t *s = str_new("abc");
+    str_t *r = str_replace(s, "", "X", 1);
+
+    assert(r != NULL);
+    assert(strcmp(str_cstr(r), "X") == 0);
+    assert(str_length(r) == 1);
+
+    str_del(s);
+    str_del(r);
+}
+
+static void test_replace_empty_substring_insert_multiple_times(void)
+{
+    str_t *s = str_new("abc");
+    str_t *r = str_replace(s, "", "-", 4);
+
+    /*
+     * Current implementation behavior:
+     * "-a-b-c-"
+     */
+    assert(r != NULL);
+    assert(strcmp(str_cstr(r), "-a-b-c-") == 0);
+    assert(str_length(r) == strlen("-a-b-c-"));
+
+    str_del(s);
+    str_del(r);
+}
+
+static void test_replace_empty_substring_with_negative_n(void)
+{
+    str_t *s = str_new("abc");
+    str_t *r = str_replace(s, "", "+", -1);
+
+    assert(r != NULL);
+    assert(strcmp(str_cstr(r), "+a+b+c+") == 0);
+    assert(str_length(r) == strlen("+a+b+c+"));
+
+    str_del(s);
+    str_del(r);
+}
+
+static void test_replace_empty_substring_n_exceeds_length_plus_one(void)
+{
+    str_t *s = str_new("ab");
+    str_t *r = str_replace(s, "", "Z", 100);
+
+    assert(r != NULL);
+    assert(strcmp(str_cstr(r), "ZaZbZ") == 0);
+    assert(str_length(r) == strlen("ZaZbZ"));
+
+    str_del(s);
+    str_del(r);
+}
+
+static void test_replace_overlapping_substrings(void)
+{
+    str_t *s = str_new("aaaaa");
+    str_t *r = str_replace(s, "aa", "X", -1);
+
+    /*
+     * Non-overlapping replacement behavior.
+     * Matches at positions 0 and 2.
+     */
+    assert(r != NULL);
+    assert(strcmp(str_cstr(r), "XXa") == 0);
+    assert(str_length(r) == 3);
+
+    str_del(s);
+    str_del(r);
+}
+
+static void test_str_replace(void)
+{
+    test_replace_null_arguments();
+    test_replace_empty_string_singleton();
+    test_replace_n_zero_returns_clone();
+    test_replace_substring_not_found();
+    test_replace_replace_single_occurrence();
+    test_replace_replace_multiple_occurrences();
+    test_replace_replace_all_occurrences_with_negative_n();
+    test_replace_replace_when_n_exceeds_occurrences();
+    test_replace_replacement_shorter_than_substring();
+    test_replace_replacement_longer_than_substring();
+    test_replace_replace_with_empty_replacement();
+    test_replace_empty_substring_and_empty_replacement();
+    test_replace_empty_substring_insert_prefix_once();
+    test_replace_empty_substring_insert_multiple_times();
+    test_replace_empty_substring_with_negative_n();
+    test_replace_empty_substring_n_exceeds_length_plus_one();
+    test_replace_overlapping_substrings();
+}
+
+
 /*****************************************************************************
  * Main
  *****************************************************************************/
@@ -444,6 +690,7 @@ void test_str (void)
     test_str_join();
     test_str_split();
     test_str_ssplit();
+    test_str_replace();
 
     printf("All str_t tests passed\n");
 }

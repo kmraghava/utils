@@ -28,6 +28,9 @@ extern "C" {
 /*****************************************************************************
  * Global Defines
  *****************************************************************************/
+#define str_replace_all(str_p, substr_p, replacement_str_p) \
+    str_replace(str_p, substr_p, replacement_str_p, -1)
+
 
 /*****************************************************************************
  * Global Constants
@@ -92,6 +95,20 @@ extern str_t* str_del (str_t *str_p);
  *
  *****************************************************************************/
 extern str_t* str_clone (str_t *str_p);
+
+/*****************************************************************************
+ *
+ *  NAME        : str_cstr
+ *
+ *  DESCRIPTION : Returns the C string representation of the given string
+ *
+ *  PARAMS      : str_p - String
+ *
+ *  RETURNS     : Returns C string.
+ *                Returns "" if input was also empty_string().
+ *
+ *****************************************************************************/
+extern const char* str_cstr (str_t *str_p);
 
 /*****************************************************************************
  *
@@ -260,17 +277,36 @@ extern str_t* str_substr (str_t *str_p, long pos, long n);
 
 /*****************************************************************************
  *
+ *  NAME        : str_replace
+ *
+ *  DESCRIPTION : Create a new string by replacing the first n occurrences of
+ *                the given substring in the given string with the given
+ *                replacement.
+ *
+ *  PARAMS      : str_p - The string
+ *                ss_p  - The substring to replace
+ *                rs_p  - The replacement string
+ *                n     - Number of occurrences to replace
+ *
+ *  RETURNS     : new string with replacements
+ *                NULL if str_p is NULL or if there is a malloc failure
+ *                Equivalent to str_clone() if n = 0 or if ss_p is not
+ *                found in str_p
+ *
+ *****************************************************************************/
+extern str_t* str_replace (str_t *str_p, const char *ss_p, const char *rs_p, long n);
+    
+/*****************************************************************************
+ *
  *  NAME        : str_join
  *
- *  DESCRIPTION : Joins two strings
+ *  DESCRIPTION : Joins the strings in the given array.
  *
- *  PARAMS      : str1_p - The first string
- *                str2_p - The second string
+ *  PARAMS      : sarray_p - Array of strings to join
+ *                sep_p    - Separator string
  *
  *  RETURNS     : Joined string
- *
- *                NULL          - if str1_p and str2_p are NULL
- *                Other's clone - if one of str1_p and str2_p is NULL
+ *                NULL if sarray_p is NULL or if there is an alloc error
  *
  *****************************************************************************/
 extern str_t* str_join (str_t **sarray_p, const char *sep_p);
@@ -297,7 +333,7 @@ extern str_t* str_join (str_t **sarray_p, const char *sep_p);
  *
  *                sep_p is a string. Therefore separator is the entire string
  *                in sep_p. For example, if sep_p = ":-",
- *                then "a:b-c:-d" will be split into a:b-c, d.
+ *                then "a:b-c:-d" will be split into "a:b-c", "d".
  *
  *****************************************************************************/
 extern str_t** str_split (str_t *str_p, const char *sep_p);
@@ -324,7 +360,7 @@ extern str_t** str_split (str_t *str_p, const char *sep_p);
  *
  *                sep_p is a set of characters. Therefore separator is any
  *                of the characters in sep_p. For example, if sep_p = ":-",
- *                then "a:b-c" will be split into a, b, c.
+ *                then "a:b-c" will be split into "a", "b", "c".
  *
  *****************************************************************************/
 extern str_t** str_ssplit (str_t *str_p, const char *sep_p);

@@ -157,6 +157,33 @@ str_t* str_clone (str_t *str_p)
 
 /*****************************************************************************
  *
+ *  NAME        : str_cstr
+ *
+ *  DESCRIPTION : Returns the C string representation of the given string
+ *
+ *  PARAMS      : str_p - String
+ *
+ *  RETURNS     : Returns C string.
+ *                Returns "" if input was also empty_string().
+ *
+ *****************************************************************************/
+const char* str_cstr (str_t *str_p)
+{
+    const char *cstr_p = NULL;
+
+    if (str_p)
+    {
+        if (str_p == estr_p)
+            cstr_p = "";
+        else
+            cstr_p = str_p->s;
+    }
+
+    return cstr_p;
+}
+
+/*****************************************************************************
+ *
  *  NAME        : str_array_new
  *
  *  DESCRIPTION : Create a fixed size array of strings
@@ -475,7 +502,7 @@ long str_contains (str_t *str_p, long pos, const char *substr_p)
     if (   str_p
         && str_p != estr_p
         && pos >= 0
-        && pos < str_p->slen
+        && pos <= str_p->slen
         && substr_p
        )
     {
@@ -512,7 +539,7 @@ str_t* str_substr (str_t *str_p, long pos, long n)
 
     if (   str_p
         && pos >= 0
-        && pos <  str_p->slen
+        && pos <= str_p->slen
        )
     {
         if (   n < 0
@@ -540,6 +567,124 @@ str_t* str_substr (str_t *str_p, long pos, long n)
     }
 
     return substr_p;
+}
+
+/*****************************************************************************
+ *
+ *  NAME        : str_replace
+ *
+ *  DESCRIPTION : Create a new string by replacing the first n occurrences of
+ *                the given substring in the given string with the given
+ *                replacement.
+ *
+ *  PARAMS      : str_p - The string
+ *                ss_p  - The substring to replace
+ *                rs_p  - The replacement string
+ *                n     - Number of occurrences to replace
+ *
+ *  RETURNS     : new string with replacements
+ *                NULL if str_p is NULL or if there is a malloc failure
+ *                Equivalent to str_clone() if n = 0 or if ss_p is not
+ *                found in str_p
+ *
+ *****************************************************************************/
+str_t* str_replace (str_t *str_p, const char *ss_p, const char *rs_p, long n)
+{
+    str_t  *replaced_str_p = NULL;
+
+    if (   str_p
+        && ss_p
+        && rs_p
+       )
+    {
+        if (str_p == estr_p)
+            replaced_str_p = estr_p;
+        else if (n == 0)
+            replaced_str_p = str_clone(str_p);
+        else if (ss_p[0] == '\0')
+        {
+            if (rs_p[0] == '\0')
+                replaced_str_p = str_clone(str_p);
+            else
+            {
+                long  rslen = strlen(rs_p);
+                long  total_length;
+
+                if (n < 0 || n > str_p->slen + 1)
+                    n = str_p->slen + 1;
+
+                total_length = str_p->slen + (rslen * n);
+                replaced_str_p = malloc(sizeof(*replaced_str_p) + total_length + 1);
+
+                if (replaced_str_p)
+                {
+                    strcpy(replaced_str_p->s, rs_p);
+                    replaced_str_p->slen = rslen;
+
+                    for (long ii = 0; ii < n-1; ii++)
+                    {
+                        replaced_str_p->s[replaced_str_p->slen] = str_p->s[ii];
+                        replaced_str_p->slen++;
+
+                        strcpy(replaced_str_p->s + replaced_str_p->slen, rs_p);
+                        replaced_str_p->slen += rslen;
+                    }
+                }
+            }
+        }
+        else
+        {
+            long  sslen = strlen(ss_p);
+            long  rslen = strlen(rs_p);
+            long  ppos, pos;
+            long  count = 0;
+            long  total_length;
+
+            pos = str_contains(str_p, 0, ss_p);
+            while (pos != -1)
+            {
+                count++;
+                pos = str_contains(str_p, pos + sslen, ss_p);
+            }
+
+            if (count == 0)
+                replaced_str_p = str_clone(str_p);
+            else
+            {
+                if (n < 0 || n > count)
+                    n = count;
+
+                total_length = str_p->slen + ((rslen - sslen) * n);
+                replaced_str_p = malloc(sizeof(*replaced_str_p) + total_length + 1);
+
+                if (replaced_str_p)
+                {
+                    replaced_str_p->slen = 0;
+                    ppos = 0;
+                    
+                    for (long ii = 0; ii < n; ii++)
+                    {
+                        pos = str_contains(str_p, ppos, ss_p);
+                        strncpy(replaced_str_p->s + replaced_str_p->slen, str_p->s + ppos, pos - ppos);
+                        replaced_str_p->slen += (pos - ppos);
+
+                        strcpy(replaced_str_p->s + replaced_str_p->slen, rs_p);
+                        replaced_str_p->slen += rslen;
+
+                        ppos = pos + sslen;
+                    }
+
+                    if (ppos < str_p->slen)
+                    {
+                        strcpy(replaced_str_p->s + replaced_str_p->slen, str_p->s + ppos);
+                        replaced_str_p->slen += (str_p->slen - ppos);
+                    }
+                }
+            }
+        }
+    }
+
+    return replaced_str_p;
 }
 
 /*****************************************************************************
@@ -679,7 +824,7 @@ str_t** str_split (str_t *str_p, const char *sep_p)
             {
                 count = 0;
                 ppos = 0;
-                pos = str_contains(str_p, ppos, sep_p);
+                pos = str_contains(str_p, 0, sep_p);
                 while (pos != -1)
                 {
                     sarray_p[count] = str_substr(str_p, ppos, pos - ppos);
