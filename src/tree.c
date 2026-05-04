@@ -56,6 +56,51 @@ tree_node_t  __tree_run_once;
 *****************************************************************************/
 /*****************************************************************************
  *
+ *  NAME        : tree_del
+ *                tree_node_del
+ *
+ *  DESCRIPTION : Delete the tree nodes
+ *
+ *  PARAMS      : tree_p  - Tree
+ *                tnode_p - Tree node
+ *                del_fn  - Callback function
+ *
+ *  RETURNS     : void
+ *
+ *  NOTES       : del_fn is called for each node in the tree. It can be used
+ *                to free the memory allocated for the node's member. The
+ *                del_fn is called after the node is removed from the tree.
+ *                So, it is safe to free the member's memory if allocated.
+ *                Also, the del_fn should not access the node's parent; it will
+ *                be NULL.
+ *                The del_fn is called for leaf nodes first and then for
+ *                parent nodes.
+ *
+ *****************************************************************************/
+void tree_del (tree_t *tree_p, void (*del_fn)(tree_node_t *tnode_p))
+{
+    if (tree_p)
+    {
+        while (!list_empty(tree_p->nodes))
+            tree_node_del(list_first_member(tree_p->nodes, tree_node_t, llnode), del_fn);
+    }
+}
+void tree_node_del (tree_node_t *tnode_p, void (*del_fn)(tree_node_t *tnode_p))
+{
+    if (tnode_p)
+    {
+        tree_del(&tnode_p->sub_tree, del_fn);
+
+        if (tnode_p->parent_p)
+            list_remove(tnode_p->parent_p->nodes, tnode_p->llnode);
+
+        if (del_fn)
+            del_fn(tnode_p);
+    }
+}
+
+/*****************************************************************************
+ *
  *  NAME        : tree_iterate
  *                tree_node_iterate
  *
@@ -167,8 +212,8 @@ size_t tree_node_level (tree_node_t *tnode_p)
 
 /*****************************************************************************
  *
- *  NAME        : tree_find
- *                tree_node_find
+ *  NAME        : tree_find_node
+ *                tree_node_find_node
  *
  *  DESCRIPTION : Find a node in the tree
  *
@@ -181,20 +226,19 @@ size_t tree_node_level (tree_node_t *tnode_p)
  *  RETURNS     : Found node or NULL
  *
  *****************************************************************************/
-tree_node_t* tree_find (tree_t *tree_p, size_t depth, void *key_p, bool (*member_match_fn)(tree_node_t *tnode_p, void *key_p))
+tree_node_t* tree_find_node (tree_t *tree_p, size_t depth, void *key_p, bool (*member_match_fn)(tree_node_t *tnode_p, void *key_p))
 {
     tree_node_t  *tnode_p,
                  *fnode_p = NULL;
 
     if (   tree_p
-        && key_p
         && member_match_fn
         && depth > 0
        )
     {
         list_foreach_member(tree_p->nodes, tree_node_t, llnode, tnode_p)
         {
-            fnode_p = tree_node_find(tnode_p, depth, key_p, member_match_fn);
+            fnode_p = tree_node_find_node(tnode_p, depth, key_p, member_match_fn);
 
             if (fnode_p)
                 break;
@@ -203,12 +247,11 @@ tree_node_t* tree_find (tree_t *tree_p, size_t depth, void *key_p, bool (*member
 
     return fnode_p;
 }
-tree_node_t* tree_node_find (tree_node_t *tnode_p, size_t depth, void *key_p, bool (*member_match_fn)(tree_node_t *tnode_p, void *key_p))
+tree_node_t* tree_node_find_node (tree_node_t *tnode_p, size_t depth, void *key_p, bool (*member_match_fn)(tree_node_t *tnode_p, void *key_p))
 {
     tree_node_t  *fnode_p = NULL;
 
     if (   tnode_p
-        && key_p
         && member_match_fn
         && depth > 0
        )
@@ -216,7 +259,7 @@ tree_node_t* tree_node_find (tree_node_t *tnode_p, size_t depth, void *key_p, bo
         if (member_match_fn(tnode_p, key_p))
             fnode_p = tnode_p;
         else
-            fnode_p = tree_find(&tnode_p->sub_tree, depth - 1, key_p, member_match_fn);
+            fnode_p = tree_find_node(&tnode_p->sub_tree, depth - 1, key_p, member_match_fn);
     }
 
     return fnode_p;

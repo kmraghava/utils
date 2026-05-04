@@ -526,7 +526,7 @@ static void test_tree_node_iterate_single_node(void)
 }
 
 /****************************************************************************
- * tree_find()
+ * tree_find_node()
  ****************************************************************************/
 
 static void test_tree_find_null_arguments(void)
@@ -540,15 +540,15 @@ static void test_tree_find_null_arguments(void)
 
     make_node(&node, 1, "node");
 
-    assert(tree_find(NULL, 1, &id, match_by_id) == NULL);
-    assert(tree_find(&root, 1, NULL, match_by_id) == NULL);
-    assert(tree_find(&root, 1, &id, NULL) == NULL);
-    assert(tree_find(&root, 0, &id, match_by_id) == NULL);
+    assert(tree_find_node(NULL, 1, &id, match_by_id) == NULL);
+    assert(tree_find_node(&root, 1, NULL, match_by_id) == NULL);
+    assert(tree_find_node(&root, 1, &id, NULL) == NULL);
+    assert(tree_find_node(&root, 0, &id, match_by_id) == NULL);
 
-    assert(tree_node_find(NULL, 1, &id, match_by_id) == NULL);
-    assert(tree_node_find(&node.tnode, 1, NULL, match_by_id) == NULL);
-    assert(tree_node_find(&node.tnode, 1, &id, NULL) == NULL);
-    assert(tree_node_find(&node.tnode, 0, &id, match_by_id) == NULL);
+    assert(tree_node_find_node(NULL, 1, &id, match_by_id) == NULL);
+    assert(tree_node_find_node(&node.tnode, 1, NULL, match_by_id) == NULL);
+    assert(tree_node_find_node(&node.tnode, 1, &id, NULL) == NULL);
+    assert(tree_node_find_node(&node.tnode, 0, &id, match_by_id) == NULL);
 }
 
 static void test_tree_find_root_level(void)
@@ -569,7 +569,7 @@ static void test_tree_find_root_level(void)
     tree_add_node(root, a.tnode);
     tree_add_node(root, b.tnode);
 
-    found_p = tree_find(&root, 1, &id, match_by_id);
+    found_p = tree_find_node(&root, 1, &id, match_by_id);
 
     assert(found_p == &b.tnode);
 }
@@ -598,19 +598,19 @@ static void test_tree_find_nested_depth(void)
     /*
      * depth=1 searches only root level.
      */
-    found_p = tree_find(&root, 1, &id, match_by_id);
+    found_p = tree_find_node(&root, 1, &id, match_by_id);
     assert(found_p == NULL);
 
     /*
      * depth=2 searches children.
      */
-    found_p = tree_find(&root, 2, &id, match_by_id);
+    found_p = tree_find_node(&root, 2, &id, match_by_id);
     assert(found_p == NULL);
 
     /*
      * depth=3 reaches grandchild.
      */
-    found_p = tree_find(&root, 3, &id, match_by_id);
+    found_p = tree_find_node(&root, 3, &id, match_by_id);
     assert(found_p == &c.tnode);
 }
 
@@ -629,7 +629,7 @@ static void test_tree_find_not_found(void)
 
     tree_add_node(root, a.tnode);
 
-    found_p = tree_find(&root, 10, &id, match_by_id);
+    found_p = tree_find_node(&root, 10, &id, match_by_id);
 
     assert(found_p == NULL);
 }
@@ -652,7 +652,7 @@ static void test_tree_find_first_match(void)
     tree_add_node(root, a.tnode);
     tree_add_node(root, b.tnode);
 
-    found_p = tree_find(&root, 1, name, match_by_name);
+    found_p = tree_find_node(&root, 1, name, match_by_name);
 
     /*
      * First insertion-order match.
@@ -670,7 +670,7 @@ static void test_tree_node_find_current_node_match(void)
 
     make_node(&node, 55, "node");
 
-    found_p = tree_node_find(&node.tnode, 1, &id, match_by_id);
+    found_p = tree_node_find_node(&node.tnode, 1, &id, match_by_id);
 
     assert(found_p == &node.tnode);
 }
