@@ -9,6 +9,7 @@ extern void test_json_field (void);
 extern void test_mac_addr (void);
 extern void test_ctree (void);
 extern void test_str (void);
+extern void test_tree (void);
 
 int main ()
 {
@@ -26,6 +27,8 @@ int main ()
     test_ctree();
     printf("\n");
     test_str();
+    printf("\n");
+    test_tree();
     printf("\n");
 
     return 0;
