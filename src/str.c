@@ -629,6 +629,12 @@ str_t* str_replace (str_t *str_p, const char *ss_p, const char *rs_p, long n)
                         strcpy(replaced_str_p->s + replaced_str_p->slen, rs_p);
                         replaced_str_p->slen += rslen;
                     }
+
+                    if (n-1 < str_p->slen)
+                    {
+                        strcpy(replaced_str_p->s + replaced_str_p->slen, str_p->s + n-1);
+                        replaced_str_p->slen += (str_p->slen - (n-1));
+                    }
                 }
             }
         }
@@ -668,8 +674,11 @@ str_t* str_replace (str_t *str_p, const char *ss_p, const char *rs_p, long n)
                         strncpy(replaced_str_p->s + replaced_str_p->slen, str_p->s + ppos, pos - ppos);
                         replaced_str_p->slen += (pos - ppos);
 
-                        strcpy(replaced_str_p->s + replaced_str_p->slen, rs_p);
-                        replaced_str_p->slen += rslen;
+                        if (rslen > 0)
+                        {
+                            strcpy(replaced_str_p->s + replaced_str_p->slen, rs_p);
+                            replaced_str_p->slen += rslen;
+                        }
 
                         ppos = pos + sslen;
                     }
@@ -709,9 +718,7 @@ str_t* str_join (str_t **sarray_p, const char *sep_p)
        )
     {
         if (sarray_p[0] == NULL)
-        {
             joined_str_p = estr_p;
-        }
         else
         {
             long  sep_len = strlen(sep_p),
@@ -724,22 +731,38 @@ str_t* str_join (str_t **sarray_p, const char *sep_p)
                 total_slen += sarray_p[count]->slen;
                 count++;
             }
-            total_slen += sep_len * (count - 1);
+            total_slen += (sep_len * (count - 1));
 
-            joined_str_p = malloc(sizeof(*joined_str_p) + total_slen + 1);
-
-            if (joined_str_p)
+            if (total_slen == 0)
+                joined_str_p = estr_p;
+            else
             {
-                strcpy(joined_str_p->s, sarray_p[0]->s);
-                joined_str_p->slen = sarray_p[0]->slen;
+                joined_str_p = malloc(sizeof(*joined_str_p) + total_slen + 1);
 
-                for (ii = 1; ii < count; ii++)
+                if (joined_str_p)
                 {
-                    strcpy(joined_str_p->s + joined_str_p->slen, sep_p);
-                    joined_str_p->slen += sep_len;
+                    if (sarray_p[0] == estr_p)
+                    {
+                        joined_str_p->slen = 0;
+                        joined_str_p->s[0] = '\0';
+                    }
+                    else
+                    {
+                        strcpy(joined_str_p->s, sarray_p[0]->s);
+                        joined_str_p->slen = sarray_p[0]->slen;
+                    }
 
-                    strcpy(joined_str_p->s + joined_str_p->slen, sarray_p[ii]->s);
-                    joined_str_p->slen += sarray_p[ii]->slen;
+                    for (ii = 1; ii < count; ii++)
+                    {
+                        strcpy(joined_str_p->s + joined_str_p->slen, sep_p);
+                        joined_str_p->slen += sep_len;
+
+                        if (sarray_p[ii] != estr_p)
+                        {
+                            strcpy(joined_str_p->s + joined_str_p->slen, sarray_p[ii]->s);
+                            joined_str_p->slen += sarray_p[ii]->slen;
+                        }
+                    }
                 }
             }
         }
