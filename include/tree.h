@@ -86,6 +86,98 @@ extern "C" {
 
 /*****************************************************************************
  *
+ *  NAME        : tree_first
+ *                tree_last
+ *
+ *  DESCRIPTION : Returns pointer to first / last node in t.nodes
+ *
+ *  PARAMS      : t - tree_t
+ *
+ *  RETURNS     : Pointers to first or last node of t.nodes
+ *
+ *  NOTES       : If the t.nodes is empty, they return NULL
+ *
+ *****************************************************************************/
+#define tree_first(t)     list_first_member((t).nodes, tree_node_t, llnode)
+#define tree_last(t)      list_last_member((t).nodes, tree_node_t, llnode)
+
+/*****************************************************************************
+ *
+ *  NAME        : tree_next
+ *                tree_prev
+ *
+ *  DESCRIPTION : Returns pointer to next / previous node in t.nodes
+ *
+ *  PARAMS      : t  - tree_t
+ *                tn - tree_node_t
+ *
+ *  RETURNS     : Pointers to next / previous node in t.nodes
+ *
+ *  NOTES       : If the t.nodes is empty, they return NULL
+ *                If tn = t.nodes.head, tree_prev returns NULL
+ *                If tn = t.nodes.tail, tree_next returns NULL
+ *
+ *****************************************************************************/
+#define tree_next(t, tn)  list_next_member((t).nodes, (tn).llnode, tree_node_t, llnode)
+#define tree_prev(t, tn)  list_prev_member((t).nodes, (tn).llnode, tree_node_t, llnode)
+
+/*****************************************************************************
+ *
+ *  NAME        : tree_first_member
+ *                tree_last_member
+ *
+ *  DESCRIPTION : Returns pointer to first / last member in t.nodes
+ *
+ *  PARAMS      : t - tree_t
+ *
+ *  RETURNS     : Pointers to first or last member of t.nodes
+ *
+ *  NOTES       : If the t.nodes is empty, they return NULL
+ *
+ *****************************************************************************/
+ #define tree_first_member(t, container_type, tnode)            \
+    ({                                                          \
+        tree_node_t  *__tnp = tree_first(t);                    \
+        __tnp ? tree_get(__tnp, container_type, tnode) : NULL;  \
+    })
+
+#define tree_last_member(t, container_type, tnode)              \
+    ({                                                          \
+        tree_node_t  *__tnp = tree_last(t);                     \
+        __tnp ? tree_get(__tnp, container_type, tnode) : NULL;  \
+    })
+
+/*****************************************************************************
+ *
+ *  NAME        : tree_next_member
+ *                tree_prev_member
+ *
+ *  DESCRIPTION : Returns pointer to next / previous member in t.nodes
+ *
+ *  PARAMS      : t  - tree_t
+ *                tn - tree_node_t
+ *
+ *  RETURNS     : Pointers to next / previous member in t.nodes
+ *
+ *  NOTES       : If the t.nodes is empty, they return NULL
+ *                If tn = t.nodes.head, tree_prev returns NULL
+ *                If tn = t.nodes.tail, tree_next returns NULL
+ *
+ *****************************************************************************/
+#define tree_next_member(t, tn, container_type, tnode)                                          \
+    ({                                                                                          \
+        tree_node_t  *__tnp = list_next_member((t).nodes, (tn).llnode, tree_node_t, llnode);    \
+        __tnp ? tree_get(__tnp, container_type, tnode) : NULL;                                  \
+    })
+#define tree_prev_member(t, tn, container_type, tnode)                                          \
+    ({                                                                                          \
+        tree_node_t  *__tnp = list_prev_member((t).nodes, (tn).llnode, tree_node_t, llnode);    \
+        __tnp ? tree_get(__tnp, container_type, tnode) : NULL;                                  \
+    })
+
+
+/*****************************************************************************
+ *
  *  NAME        : tree_add_node
  *
  *  DESCRIPTION : Adds the given node to the given tree

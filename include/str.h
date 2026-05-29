@@ -28,8 +28,8 @@ extern "C" {
 /*****************************************************************************
  * Global Defines
  *****************************************************************************/
-#define str_replace_all(str_p, substr_p, replacement_str_p) \
-    str_replace(str_p, substr_p, replacement_str_p, -1)
+#define string_replace_all(str_p, substr_p, replacement_str_p) \
+    string_replace(str_p, substr_p, replacement_str_p, -1)
 
 
 /*****************************************************************************
@@ -39,7 +39,15 @@ extern "C" {
 /*****************************************************************************
  * Global Types
  *****************************************************************************/
-typedef struct str_s str_t;
+typedef struct string_s
+{
+    long   capacity;
+    long   length;
+
+    char  *s;
+
+} string_t;
+
 
 
 /*****************************************************************************
@@ -55,22 +63,70 @@ typedef struct str_s str_t;
  *****************************************************************************/
 /*****************************************************************************
  *
- *  NAME        : str_new
+ *  NAME        : string_new
+ *                string_newn
+ *                string_newb
  *
  *  DESCRIPTION : Create a new string
  *
- *  PARAMS      : s - CString
+ *  PARAMS      : s   - CString or pointer to character array
+ *                pos - Start position in string s
+ *                n   - Number of characters
  *
  *  RETURNS     : Returns new string.
- *                Returns empty_string() if s is "".
  *                Return NULL if input was invalid or if malloc failed.
  *
  *****************************************************************************/
-extern str_t* str_new (const char *s);
+#define string_new(s)  string_newb(s, 0, -1)
+#define string_newn(s, n)  string_newb(s, 0, n)
+extern string_t* string_newb (const char *s, long pos, long n);
 
 /*****************************************************************************
  *
- *  NAME        : str_del
+ *  NAME        : string_init
+ *                string_initn
+ *                string_initb
+ *
+ *  DESCRIPTION : Initialize a string_t structure
+ *
+ *  PARAMS      : str_p - String
+ *                s     - CString or pointer to character array
+ *                pos   - Start position in string s
+ *                n     - Number of characters
+ *
+ *  RETURNS     : Nothing.
+ *
+ *****************************************************************************/
+#define string_init(str_p, s)  string_initb(str_p, s, 0, -1)
+#define string_initn(str_p, s, n)  string_initb(str_p, s, 0, n)
+extern bool string_initb (string_t *str_p, const char *s, long pos, long n);
+
+/*****************************************************************************
+ *
+ *  NAME        : string_set
+ *                string_setn
+ *                string_setb
+ *
+ *  DESCRIPTION : Set the value of a string
+ *
+ *  PARAMS      : str_p - String
+ *                s     - CString or pointer to character array
+ *                pos   - Start position in string s
+ *                n     - Number of characters
+ *
+ *  RETURNS     : Nothing.
+ *
+ *  NOTES       : Previously allocated memory if any are freed before
+ *                allocating memory for new string.
+ *
+ *****************************************************************************/
+#define string_set(str_p, s)  string_setb(str_p, s, 0, -1)
+#define string_setn(str_p, s, n)  string_setb(str_p, s, 0, n)
+extern bool string_setb (string_t *str_p, const char *s, long pos, long n);
+
+/*****************************************************************************
+ *
+ *  NAME        : string_delete
  *
  *  DESCRIPTION : Deletes the given string
  *
@@ -79,106 +135,122 @@ extern str_t* str_new (const char *s);
  *  RETURNS     : Returns NULL.
  *
  *****************************************************************************/
-extern str_t* str_del (str_t *str_p);
+extern string_t* string_delete (string_t *str_p);
 
 /*****************************************************************************
  *
- *  NAME        : str_clone
+ *  NAME        : string_clone
  *
  *  DESCRIPTION : Clones the given string
  *
  *  PARAMS      : str_p - String
  *
  *  RETURNS     : Returns new string.
- *                Returns empty_string() if input was also empty_string().
  *                Return NULL if input was invalid or if malloc failed.
  *
  *****************************************************************************/
-extern str_t* str_clone (str_t *str_p);
+extern string_t* string_clone (string_t *str_p);
 
 /*****************************************************************************
  *
- *  NAME        : str_cstr
+ *  NAME        : string_swap
  *
- *  DESCRIPTION : Returns the C string representation of the given string
+ *  DESCRIPTION : Swaps the contents of two strings
+ *
+ *  PARAMS      : str1_p - First string
+ *                str2_p - Second string
+ *
+ *  RETURNS     : Nothing.
+ *
+ *****************************************************************************/
+extern void string_swap (string_t *str1_p, string_t *str2_p);
+
+/*****************************************************************************
+ *
+ *  NAME        : string_reserve
+ *
+ *  DESCRIPTION : Reserves memory of given size
+ *
+ *  PARAMS      : size - Desired capacity
+ *
+ *  RETURNS     : true if memory was reserved
+ *                false otherwise
+ *
+ *****************************************************************************/
+extern bool string_reserve (string_t *str_p, long size);
+
+/*****************************************************************************
+ *
+ *  NAME        : string_cstr
+ *                string_data
+ *
+ *  DESCRIPTION : Returns the C string of the given string
  *
  *  PARAMS      : str_p - String
  *
- *  RETURNS     : Returns C string.
- *                Returns "" if input was also empty_string().
+ *  RETURNS     : Returns const C string.
  *
  *****************************************************************************/
-extern const char* str_cstr (str_t *str_p);
+extern const char* string_cstr (string_t *str_p);
+extern       char* string_data (string_t *str_p);
 
 /*****************************************************************************
  *
- *  NAME        : str_array_new
+ *  NAME        : string_at
  *
- *  DESCRIPTION : Create a fixed size array of strings
+ *  DESCRIPTION : Get the character at the given position in the given string
  *
- *  PARAMS      : count - Size of array
+ *  PARAMS      : str_p - The string
+ *                pos   - Position in the string
  *
- *  RETURNS     : Returns array of strings
- *                Return NULL if input was invalid or if calloc failed.
+ *  RETURNS     : Character at the given position
  *
  *****************************************************************************/
-extern str_t** str_array_new (long count);
+extern char string_at (string_t *str_p, long pos);
 
 /*****************************************************************************
  *
- *  NAME        : str_array_del
+ *  NAME        : string_length
  *
- *  DESCRIPTION : Deletes the given array of strings
- *
- *  PARAMS      : sarray_p - Array of strings
- *
- *  RETURNS     : Returns NULL.
- *
- *****************************************************************************/
-extern str_t** str_array_del (str_t **sarray_p);
-
-/*****************************************************************************
- *
- *  NAME        : str_array_clone
- *
- *  DESCRIPTION : Clones the given array of strings
- *
- *  PARAMS      : sarray_p - Array of strings
- *
- *  RETURNS     : Returns new array of strings.
- *
- *****************************************************************************/
-extern str_t** str_array_clone (str_t **sarray_p);
-
-/*****************************************************************************
- *
- *  NAME        : empty_string
- *
- *  DESCRIPTION : Returns string initialized to ""
- *
- *  PARAMS      : void
- *
- *  RETURNS     : Always valid and returns the same pointer.
- *
- *****************************************************************************/
-extern str_t* empty_str (void);
-
-/*****************************************************************************
- *
- *  NAME        : str_length
- *
- *  DESCRIPTION : Get length of the given string
+ *  DESCRIPTION : Get the length of the given string
  *
  *  PARAMS      : str_p - The string
  *
- *  RETURNS     : Length of given string
+ *  RETURNS     : Length of the string
  *
  *****************************************************************************/
-extern long str_length (str_t *str_p);
+extern long string_length (string_t *str_p);
 
 /*****************************************************************************
  *
- *  NAME        : str_tolower
+ *  NAME        : string_capacity
+ *
+ *  DESCRIPTION : Get the capacity of the given string
+ *
+ *  PARAMS      : str_p - The string
+ *
+ *  RETURNS     : Capacity of the string
+ *
+ *****************************************************************************/
+extern long string_capacity (string_t *str_p);
+
+/*****************************************************************************
+ *
+ *  NAME        : string_empty
+ *
+ *  DESCRIPTION : Check if the given string is empty
+ *
+ *  PARAMS      : str_p - The string
+ *
+ *  RETURNS     : true if the string is empty
+ *                false otherwise
+ *
+ *****************************************************************************/
+extern bool string_empty (string_t *str_p);
+
+/*****************************************************************************
+ *
+ *  NAME        : string_tolower
  *
  *  DESCRIPTION : Convert the given string to lowercase
  *
@@ -187,11 +259,11 @@ extern long str_length (str_t *str_p);
  *  RETURNS     : string in lower case
  *
  *****************************************************************************/
-extern str_t* str_tolower (str_t *str_p);
+extern void string_tolower (string_t *str_p);
 
 /*****************************************************************************
  *
- *  NAME        : str_toupper
+ *  NAME        : string_toupper
  *
  *  DESCRIPTION : Convert the given string to uppercase
  *
@@ -200,11 +272,11 @@ extern str_t* str_tolower (str_t *str_p);
  *  RETURNS     : string in upper case
  *
  *****************************************************************************/
-extern str_t* str_toupper (str_t *str_p);
+extern void string_toupper (string_t *str_p);
 
 /*****************************************************************************
  *
- *  NAME        : str_compare
+ *  NAME        : string_compare
  *
  *  DESCRIPTION : Compares two strings
  *
@@ -219,45 +291,104 @@ extern str_t* str_toupper (str_t *str_p);
  *                        and str2_p  = NULL
  *                  0  if     str1_p  = NULL
  *                        and str2_p  = NULL
- *                 +1  if     str_length(str1_p) > str_length(str1_p)
- *                 -1  if     str_length(str1_p) < str_length(str1_p)
- *                 +1  if     str_length(str1_p) > str_length(str1_p)
- *                < 0  if     str_length(str1_p) = str_length(str1_p)
+ *                 -1  if     string_length(str1_p) < string_length(str1_p)
+ *                 +1  if     string_length(str1_p) > string_length(str1_p)
+ *                < 0  if     string_length(str1_p) = string_length(str1_p)
  *                        and ASCII(str1_p) < ASCII(str2_p)
- *                > 0  if     str_length(str1_p) = str_length(str1_p)
+ *                > 0  if     string_length(str1_p) = string_length(str1_p)
  *                        and ASCII(str1_p) > ASCII(str2_p)
- *                = 0  if     str_length(str1_p) = str_length(str1_p)
+ *                = 0  if     string_length(str1_p) = string_length(str1_p)
  *                        and ASCII(str1_p) = ASCII(str2_p)
  *
- * NOTES        : Comparison is done first based on length and then based on
- *                ASCII values of characters.
- *                If n is non-zero, then only first n characters of the
+ * NOTES        : If n is non-zero, then only first n characters of the
  *                strings are compared.
- *                If n is zero, then all characters of the strings are compared.
+ *                If n < zero, then all characters of the strings are compared.
  *                If icase_b is true, then case-insensitive comparison is done.
  *                If icase_b is false, then case-sensitive comparison is done.
  *
  *****************************************************************************/
-extern int str_compare (str_t *str1_p, str_t *str2_p, long n, bool icase_b);
+extern int string_compare (string_t *str1_p, string_t *str2_p, long n, bool icase_b);
 
 /*****************************************************************************
  *
- *  NAME        : str_contains
+ *  NAME        : string_starts_with
+ *
+ *  DESCRIPTION : Check if the given string starts the given prefix
+ *
+ *  PARAMS      : str_p    - The string
+ *                prefix_p - The substring to search for
+ *
+ *  RETURNS     : true if str_p starts with prefix_p
+ *                false otherwise
+ *
+ *****************************************************************************/
+extern bool string_starts_with (string_t *str_p, const char *prefix_p);
+
+/*****************************************************************************
+ *
+ *  NAME        : string_ends_with
+ *
+ *  DESCRIPTION : Check if the given string ends the given suffix
+ *
+ *  PARAMS      : str_p    - The string
+ *                suffix_p - The substring to search for
+ *
+ *  RETURNS     : true if str_p ends with suffix_p
+ *                false otherwise
+ *
+ *****************************************************************************/
+extern bool string_ends_with (string_t *str_p, const char *suffix_p);
+
+/*****************************************************************************
+ *
+ *  NAME        : string_contains
  *
  *  DESCRIPTION : Check if the given string contains the given substring
  *
  *  PARAMS      : str_p    - The string
- *                pos      - Starting position in the string to search from   
+ *                substr_p - The substring to search for
+ *
+ *  RETURNS     : true if str_p contains substr_p
+ *                false otherwise
+ *
+ *****************************************************************************/
+#define string_contains(str_p, substr_p)  (-1 != string_find(str_p, 0, substr_p))
+
+/*****************************************************************************
+ *
+ *  NAME        : string_find
+ *
+ *  DESCRIPTION : Find the first occurence of the given substring in the
+ *                given string
+ *
+ *  PARAMS      : str_p    - The string
+ *                pos      - Starting position in the string to search from
  *                substr_p - The substring to search for
  *
  *  RETURNS     : Position of the substring if found, -1 otherwise
  *
  *****************************************************************************/
-extern long str_contains (str_t *str_p, long pos, const char *substr_p);
+extern long string_find (string_t *str_p, long pos, const char *substr_p);
 
 /*****************************************************************************
  *
- *  NAME        : str_substr
+ *  NAME        : string_rfind
+ *
+ *  DESCRIPTION : Find the last occurence of the given substring in the
+ *                given string (reverse scan)
+ *
+ *  PARAMS      : str_p    - The string
+ *                last_pos - Position in the string to search backwards from
+ *                substr_p - The substring to search for
+ *
+ *  RETURNS     : Position of the substring if found, -1 otherwise
+ *
+ *****************************************************************************/
+extern long string_rfind (string_t *str_p, long last_pos, const char *substr_p);
+
+/*****************************************************************************
+ *
+ *  NAME        : string_substr
  *
  *  DESCRIPTION : Create a new substring from the given string
  *
@@ -266,39 +397,103 @@ extern long str_contains (str_t *str_p, long pos, const char *substr_p);
  *                n     - Number of characters to extract.
  *
  *  RETURNS     : substring
- *                NULL      if str_p is NULL or if there is a malloc failure or
- *                          if pos is out of bounds
- *                empty_str if n = 0
- *                if n < 0 or n > pos + str_length(str_p), all characters
- *                from pos in str_p will be contained in returned substring.
  *
  *****************************************************************************/
-extern str_t* str_substr (str_t *str_p, long pos, long n);
+extern string_t* string_substr (string_t *str_p, long pos, long n);
 
 /*****************************************************************************
  *
- *  NAME        : str_replace
+ *  NAME        : string_append
+ *                string_appendn
  *
- *  DESCRIPTION : Create a new string by replacing the first n occurrences of
- *                the given substring in the given string with the given
- *                replacement.
+ *  DESCRIPTION : Appends the given string to the end of the given string
+ *
+ *  PARAMS      : str_p - The string to append to
+ *                s     - The string to append
+ *                n     - Number of characters to append from s
+ *
+ *  RETURNS     : true if append was successful
+ *                false otherwise
+ *
+ *****************************************************************************/
+#define string_append(str_p, s)  string_appendn(str_p, s, -1)
+extern bool string_appendn (string_t *str_p, const char *s, long n);
+
+/*****************************************************************************
+ *
+ *  NAME        : string_insert
+ *                string_insertn
+ *
+ *  DESCRIPTION : Inserts the given string at the specified position in the
+ *                given string
+ *
+ *  PARAMS      : str_p - The string to insert into
+ *                pos   - Insert position
+ *                s     - The string to insert
+ *                n     - Number of characters to insert from s
+ *
+ *  RETURNS     : true if insert was successful
+ *                false otherwise
+ *
+ *****************************************************************************/
+#define string_insert(str_p, pos, s)  string_insertn(str_p, pos, s, -1)
+extern bool string_insertn (string_t *str_p, long pos, const char *s, long n);
+
+/*****************************************************************************
+ *
+ *  NAME        : string_replace
+ *
+ *  DESCRIPTION : Replace the first n occurrences of the given substring in
+ *                the given string with the given replacement.
  *
  *  PARAMS      : str_p - The string
  *                ss_p  - The substring to replace
  *                rs_p  - The replacement string
- *                n     - Number of occurrences to replace
+ *                n     - Number of occurrences to replace (-1 means all)
  *
- *  RETURNS     : new string with replacements
- *                NULL if str_p is NULL or if there is a malloc failure
- *                Equivalent to str_clone() if n = 0 or if ss_p is not
- *                found in str_p
+ *  RETURNS     : true if replace was successful.
+ *                false otherwise.
  *
  *****************************************************************************/
-extern str_t* str_replace (str_t *str_p, const char *ss_p, const char *rs_p, long n);
-    
+extern bool string_replace (string_t *str_p, const char *ss_p, const char *rs_p, long n);
+
 /*****************************************************************************
  *
- *  NAME        : str_join
+ *  NAME        : string_remove_prefix
+ *                string_remove_suffix
+ *
+ *  DESCRIPTION : Removes the first / last n characters from the given string
+ *
+ *  PARAMS      : str_p - The string
+ *                n     - Number of characters to remove
+ *
+ *  RETURNS     : Nothing
+ *
+ *****************************************************************************/
+extern void string_remove_prefix (string_t *str_p, long n);
+extern void string_remove_suffix (string_t *str_p, long n);
+
+/*****************************************************************************
+ *
+ *  NAME        : string_trim
+ *                string_trim_leading_ws
+ *                string_trim_trailing_ws
+ *
+ *  DESCRIPTION : Trims the given string by removing leading / trailing
+ *                whitespaces
+ *
+ *  PARAMS      : str_p - The string
+ *
+ *  RETURNS     : Nothing
+ *
+ *****************************************************************************/
+extern void string_trim             (string_t *str_p);
+extern void string_trim_leading_ws  (string_t *str_p);
+extern void string_trim_trailing_ws (string_t *str_p);
+
+/*****************************************************************************
+ *
+ *  NAME        : string_join
  *
  *  DESCRIPTION : Joins the strings in the given array.
  *
@@ -309,11 +504,11 @@ extern str_t* str_replace (str_t *str_p, const char *ss_p, const char *rs_p, lon
  *                NULL if sarray_p is NULL or if there is an alloc error
  *
  *****************************************************************************/
-extern str_t* str_join (str_t **sarray_p, const char *sep_p);
+extern string_t* string_join (string_t **sarray_p, const char *sep_p);
 
 /*****************************************************************************
  *
- *  NAME        : str_split
+ *  NAME        : string_split
  *
  *  DESCRIPTION : Split the given string into an array of string using the
  *                the given separator as delimiter string.
@@ -323,24 +518,19 @@ extern str_t* str_join (str_t **sarray_p, const char *sep_p);
  *
  *  RETURNS     : An array of strings.
  *
- *                NULL               - if str_p or sep_p is NULL or if
- *                                     there is an alloc error.
- *                empty array        - if str_p = empty_string()
- *                sarray_p[0] = NULL
- *
  *                If sep_p is "", then the given string is split into
  *                constituent characters.
  *
  *                sep_p is a string. Therefore separator is the entire string
  *                in sep_p. For example, if sep_p = ":-",
- *                then "a:b-c:-d" will be split into "a:b-c", "d".
+ *                then "a:b-c:-d" will be split into a:b-c, d.
  *
  *****************************************************************************/
-extern str_t** str_split (str_t *str_p, const char *sep_p);
+extern string_t** string_split (string_t *str_p, const char *sep_p);
 
 /*****************************************************************************
  *
- *  NAME        : str_ssplit
+ *  NAME        : string_ssplit
  *
  *  DESCRIPTION : Split the given string into an array of
  *                strings using the characters as delimiters.
@@ -350,24 +540,60 @@ extern str_t** str_split (str_t *str_p, const char *sep_p);
  *
  *  RETURNS     : An array of strings.
  *
- *                NULL               - if str_p or sep_p is NULL or if
- *                                     there is an alloc error.
- *                empty array        - if str_p = empty_string()
- *                sarray_p[0] = NULL
+ *                If sep_p is "", then the given string is split into
+ *                constituent characters and the resulting array is returned.
  *
- *                If sep_set_p is "", then the given string is split into
- *                constituent characters.
- *
- *                sep_p is a set of characters. Therefore separator is any
+ *                sep_p is a set of characters. Therefore delimiter is any
  *                of the characters in sep_p. For example, if sep_p = ":-",
- *                then "a:b-c" will be split into "a", "b", "c".
+ *                then "a:b-c" will be split into a, b, c.
  *
  *****************************************************************************/
-extern str_t** str_ssplit (str_t *str_p, const char *sep_p);
+extern string_t** string_ssplit (string_t *str_p, const char *sep_p);
+
+
+/*****************************************************************************
+ *
+ *  NAME        : string_array_new
+ *
+ *  DESCRIPTION : Create a fixed size array of strings
+ *
+ *  PARAMS      : count - Size of array
+ *
+ *  RETURNS     : Returns array of strings
+ *                Return NULL if input was invalid or if calloc failed.
+ *
+ *****************************************************************************/
+extern string_t** string_array_new (long count);
+
+/*****************************************************************************
+ *
+ *  NAME        : string_array_del
+ *
+ *  DESCRIPTION : Deletes the given array of strings
+ *
+ *  PARAMS      : sarray_p - Array of strings
+ *
+ *  RETURNS     : Returns NULL.
+ *
+ *****************************************************************************/
+extern string_t** string_array_del (string_t **sarray_p);
+
+/*****************************************************************************
+ *
+ *  NAME        : string_array_clone
+ *
+ *  DESCRIPTION : Clones the given array of strings
+ *
+ *  PARAMS      : sarray_p - Array of strings
+ *
+ *  RETURNS     : Returns new array of strings.
+ *
+ *****************************************************************************/
+extern string_t** string_array_clone (string_t **sarray_p);
 
 
 #if defined(__cplusplus)
 }
 #endif
 
-#endif /* __STR_H */
+#endif /*__STR_H */

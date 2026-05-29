@@ -8,8 +8,9 @@ extern void test_macro_args (void);
 extern void test_json_field (void);
 extern void test_mac_addr (void);
 extern void test_ctree (void);
-extern void test_str (void);
+extern void test_string (void);
 extern void test_tree (void);
+extern void test_stringv (void);
 
 int main ()
 {
@@ -26,9 +27,11 @@ int main ()
     printf("\n");
     test_ctree();
     printf("\n");
-    test_str();
+    test_string();
     printf("\n");
     test_tree();
+    printf("\n");
+    test_stringv();
     printf("\n");
 
     return 0;

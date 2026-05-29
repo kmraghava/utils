@@ -1,8 +1,8 @@
-/*****************************************************************************
+/****************************************************************************
  *
- * FILE NAME     : test_str.c
+ * FILE NAME     : tstr.c
  *
- * DESCRIPTION   : Unit tests for str_t
+ * DESCRIPTION   : unit tests for string_t
  *
  *****************************************************************************/
 
@@ -12,1297 +12,1310 @@
 
 #include "kmrUtils/str.h"
 
-/*****************************************************************************
+/****************************************************************************
  * Helpers
  *****************************************************************************/
 
-static void test_str_new_del(void)
+static void test_string_new_delete(void)
 {
-    str_t *s;
+    string_t *s;
 
-    s = str_new(NULL);
-    assert(s == NULL);
-
-    s = str_new("");
-    assert(s == empty_str());
-    assert(str_length(s) == 0);
-
-    s = str_new("hello");
+    s = string_new(NULL);
     assert(s != NULL);
-    assert(s != empty_str());
-    assert(str_length(s) == 5);
+    assert(s->s == NULL);
 
-    str_del(s);
+    s = string_new("");
+    assert(s != NULL);
+    assert(string_length(s) == 0);
+    assert(strcmp(string_cstr(s), "") == 0);
 
-    /* Should be harmless */
-    assert(str_del(NULL) == NULL);
+    string_delete(s);
 
-    /* Should not free static empty string */
-    assert(str_del(empty_str()) == NULL);
+    s = string_new("hello");
+
+    assert(s != NULL);
+    assert(string_length(s) == 5);
+    assert(strcmp(string_cstr(s), "hello") == 0);
+
+    string_delete(s);
+
+    assert(string_delete(NULL) == NULL);
 }
 
-static void test_str_clone(void)
+static void test_string_newn(void)
 {
-    str_t *s1, *s2;
+    string_t *s;
 
-    assert(str_clone(NULL) == NULL);
+    s = string_newn("abcdef", 3);
 
-    s1 = empty_str();
-    s2 = str_clone(s1);
+    assert(s != NULL);
+    assert(strcmp(string_cstr(s), "abc") == 0);
+    assert(string_length(s) == 3);
 
-    assert(s2 == empty_str());
+    string_delete(s);
+}
 
-    s1 = str_new("hello");
-    s2 = str_clone(s1);
+static void test_string_newb(void)
+{
+    string_t *s;
+
+    s = string_newb("abcdef", 2, 3);
+
+    assert(s != NULL);
+    assert(strcmp(string_cstr(s), "cde") == 0);
+    assert(string_length(s) == 3);
+
+    string_delete(s);
+}
+
+static void test_string_init(void)
+{
+    string_t s;
+
+    assert(string_init(&s, "hello") == true);
+
+    assert(strcmp(string_cstr(&s), "hello") == 0);
+    assert(string_length(&s) == 5);
+}
+
+static void test_string_initn(void)
+{
+    string_t s;
+
+    assert(string_initn(&s, "abcdef", 4) == true);
+
+    assert(strcmp(string_cstr(&s), "abcd") == 0);
+    assert(string_length(&s) == 4);
+}
+
+static void test_string_initb(void)
+{
+    string_t s;
+
+    assert(string_initb(&s, "abcdef", 1, 3) == true);
+
+    assert(strcmp(string_cstr(&s), "bcd") == 0);
+}
+
+static void test_string_set(void)
+{
+    string_t s;
+
+    assert(string_init(&s, "hello") == true);
+
+    assert(string_set(&s, "world") == true);
+
+    assert(strcmp(string_cstr(&s), "world") == 0);
+    assert(string_length(&s) == 5);
+}
+
+static void test_string_setn(void)
+{
+    string_t s;
+
+    assert(string_init(&s, "hello") == true);
+
+    assert(string_setn(&s, "abcdef", 3) == true);
+
+    assert(strcmp(string_cstr(&s), "abc") == 0);
+}
+
+static void test_string_setb(void)
+{
+    string_t s;
+
+    assert(string_init(&s, "hello") == true);
+
+    assert(string_setb(&s, "abcdef", 2, 2) == true);
+
+    assert(strcmp(string_cstr(&s), "cd") == 0);
+}
+
+static void test_string_clone(void)
+{
+    string_t *s1, *s2;
+
+    assert(string_clone(NULL) == NULL);
+
+    s1 = string_new("hello");
+    s2 = string_clone(s1);
 
     assert(s2 != NULL);
     assert(s2 != s1);
-    assert(str_compare(s1, s2, -1, false) == 0);
+    assert(string_compare(s1, s2, -1, false) == 0);
 
-    str_del(s1);
-    str_del(s2);
+    string_delete(s1);
+    string_delete(s2);
 }
 
-static void test_str_array_new_del(void)
+static void test_string_swap(void)
 {
-    str_t **arr;
+    string_t *a, *b;
 
-    assert(str_array_new(0) == NULL);
-    assert(str_array_new(-1) == NULL);
+    a = string_new("hello");
+    b = string_new("world");
 
-    arr = str_array_new(3);
+    string_swap(a, b);
+
+    assert(strcmp(string_cstr(a), "world") == 0);
+    assert(strcmp(string_cstr(b), "hello") == 0);
+
+    string_delete(a);
+    string_delete(b);
+}
+
+static void test_string_reserve(void)
+{
+    string_t *s;
+    long old_capacity;
+
+    s = string_new("abc");
+
+    old_capacity = string_capacity(s);
+
+    assert(string_reserve(s, 100) == true);
+
+    assert(string_capacity(s) >= 100);
+    assert(string_capacity(s) >= old_capacity);
+
+    assert(strcmp(string_cstr(s), "abc") == 0);
+
+    string_delete(s);
+}
+
+static void test_string_array_new_delete(void)
+{
+    string_t **arr;
+
+    assert(string_array_new(-1) == NULL);
+
+    arr = string_array_new(3);
 
     assert(arr != NULL);
     assert(arr[0] == NULL);
     assert(arr[1] == NULL);
     assert(arr[2] == NULL);
 
-    assert(str_array_del(NULL) == NULL);
-    assert(str_array_del(arr) == NULL);
+    assert(string_array_del(NULL) == NULL);
+    assert(string_array_del(arr) == NULL);
 }
 
-static void test_str_array_clone(void)
+static void test_string_array_clone(void)
 {
-    str_t **arr1, **arr2;
+    string_t **arr1, **arr2;
 
-    assert(str_array_clone(NULL) == NULL);
+    assert(string_array_clone(NULL) == NULL);
 
-    arr1 = str_array_new(3);
+    arr1 = string_array_new(3);
 
-    arr1[0] = str_new("abc");
-    arr1[1] = str_new("def");
+    arr1[0] = string_new("abc");
+    arr1[1] = string_new("def");
     arr1[2] = NULL;
 
-    arr2 = str_array_clone(arr1);
+    arr2 = string_array_clone(arr1);
 
     assert(arr2 != NULL);
     assert(arr2 != arr1);
 
-    assert(str_compare(arr1[0], arr2[0], -1, false) == 0);
-    assert(str_compare(arr1[1], arr2[1], -1, false) == 0);
+    assert(string_compare(arr1[0], arr2[0], -1, false) == 0);
+    assert(string_compare(arr1[1], arr2[1], -1, false) == 0);
 
     assert(arr1[0] != arr2[0]);
     assert(arr1[1] != arr2[1]);
 
-    str_array_del(arr1);
-    str_array_del(arr2);
+    string_array_del(arr1);
+    string_array_del(arr2);
 }
 
-static void test_str_length(void)
+static void test_string_length(void)
 {
-    str_t *s;
+    string_t *s;
 
-    assert(str_length(NULL) == 0);
+    assert(string_length(NULL) == 0);
 
-    s = str_new("abcdef");
+    s = string_new("abcdef");
 
-    assert(str_length(s) == 6);
+    assert(string_length(s) == 6);
 
-    str_del(s);
+    string_delete(s);
 }
 
-static void test_str_tolower(void)
+static void test_string_capacity(void)
 {
-    str_t *s1, *s2, *expected;
+    string_t *s;
 
-    assert(str_tolower(NULL) == NULL);
+    assert(string_capacity(NULL) == 0);
 
-    s1 = empty_str();
-    s2 = str_tolower(s1);
+    s = string_new("abcdef");
 
-    assert(s2 == empty_str());
+    assert(string_capacity(s) >= 6);
 
-    s1 = str_new("AbC123");
-    expected = str_new("abc123");
-
-    s2 = str_tolower(s1);
-
-    assert(str_compare(s2, expected, -1, false) == 0);
-
-    str_del(s1);
-    str_del(s2);
-    str_del(expected);
+    string_delete(s);
 }
 
-static void test_str_toupper(void)
+static void test_string_empty(void)
 {
-    str_t *s1, *s2, *expected;
+    string_t *s;
 
-    assert(str_toupper(NULL) == NULL);
+    assert(string_empty(NULL) == true);
 
-    s1 = empty_str();
-    s2 = str_toupper(s1);
+    s = string_new("");
 
-    assert(s2 == empty_str());
+    assert(string_empty(s) == true);
 
-    s1 = str_new("AbC123");
-    expected = str_new("ABC123");
+    string_delete(s);
 
-    s2 = str_toupper(s1);
+    s = string_new("abc");
 
-    assert(str_compare(s2, expected, -1, false) == 0);
+    assert(string_empty(s) == false);
 
-    str_del(s1);
-    str_del(s2);
-    str_del(expected);
+    string_delete(s);
 }
 
-static void test_str_compare(void)
+static void test_string_data(void)
 {
-    str_t *a, *b;
+    string_t *s;
+    char *p;
 
-    assert(str_compare(NULL, NULL, -1, false) == 0);
+    s = string_new("hello");
 
-    a = str_new("abc");
+    p = string_data(s);
 
-    assert(str_compare(a, NULL, -1, false) == 1);
-    assert(str_compare(NULL, a, -1, false) == -1);
+    assert(p != NULL);
 
-    b = str_new("abcd");
+    p[0] = 'H';
 
-    assert(str_compare(a, b, -1, false) < 0);
-    assert(str_compare(b, a, -1, false) > 0);
+    assert(strcmp(string_cstr(s), "Hello") == 0);
 
-    str_del(b);
-
-    b = str_new("abd");
-
-    assert(str_compare(a, b, -1, false) < 0);
-    assert(str_compare(b, a, -1, false) > 0);
-
-    str_del(b);
-
-    b = str_new("ABC");
-
-    assert(str_compare(a, b, -1, true) == 0);
-    assert(str_compare(a, b, -1, false) > 0);
-
-    /* n == 0 special case */
-    assert(str_compare(a, b, 0, false) == 0);
-
-    /* partial compare */
-    b = str_del(b);
-    b = str_new("abz");
-
-    assert(str_compare(a, b, 2, false) == 0);
-
-    str_del(a);
-    str_del(b);
+    string_delete(s);
 }
 
-static void test_str_contains(void)
+static void test_string_at(void)
 {
-    str_t *s;
+    string_t *s;
 
-    s = str_new("hello world");
+    s = string_new("abcdef");
 
-    assert(str_contains(NULL, 0, "hello") == -1);
-    assert(str_contains(s, -1, "hello") == -1);
-    assert(str_contains(s, 100, "hello") == -1);
-    assert(str_contains(s, 0, NULL) == -1);
+    assert(string_at(s, 0) == 'a');
+    assert(string_at(s, 5) == 'f');
 
-    assert(str_contains(s, 0, "hello") == 0);
-    assert(str_contains(s, 0, "world") == 6);
-    assert(str_contains(s, 3, "world") == 6);
-
-    assert(str_contains(s, 0, "xyz") == -1);
-
-    str_del(s);
+    string_delete(s);
 }
 
-static void test_str_substr(void)
+static void test_string_tolower(void)
 {
-    str_t *s, *sub, *expected;
+    string_t *s;
 
-    assert(str_substr(NULL, 0, 1) == NULL);
+    string_tolower(NULL);
 
-    s = str_new("abcdef");
+    s = string_new("AbC123");
 
-    assert(str_substr(s, -1, 1) == NULL);
-    assert(str_substr(s, 100, 1) == NULL);
+    string_tolower(s);
 
-    sub = str_substr(s, 0, 0);
+    assert(strcmp(string_cstr(s), "abc123") == 0);
 
-    assert(sub == empty_str());
-
-    sub = str_substr(s, 2, 2);
-    expected = str_new("cd");
-
-    assert(str_compare(sub, expected, -1, false) == 0);
-
-    str_del(sub);
-    str_del(expected);
-
-    /* n < 0 */
-    sub = str_substr(s, 2, -1);
-    expected = str_new("cdef");
-
-    assert(str_compare(sub, expected, -1, false) == 0);
-
-    str_del(sub);
-    str_del(expected);
-
-    /* n exceeds bounds */
-    sub = str_substr(s, 4, 100);
-    expected = str_new("ef");
-
-    assert(str_compare(sub, expected, -1, false) == 0);
-
-    str_del(sub);
-    str_del(expected);
-
-    str_del(s);
+    string_delete(s);
 }
 
-static void test_str_join(void)
+static void test_string_toupper(void)
 {
-    str_t **arr;
-    str_t *joined, *expected;
+    string_t *s;
 
-    assert(str_join(NULL, ",") == NULL);
+    string_toupper(NULL);
 
-    arr = str_array_new(1);
+    s = string_new("AbC123");
 
-    assert(str_join(arr, NULL) == NULL);
+    string_toupper(s);
 
-    joined = str_join(arr, ",");
+    assert(strcmp(string_cstr(s), "ABC123") == 0);
 
-    assert(joined == empty_str());
-
-    str_array_del(arr);
-
-    arr = str_array_new(4);
-
-    arr[0] = str_new("a");
-    arr[1] = str_new("bb");
-    arr[2] = str_new("ccc");
-    arr[3] = NULL;
-
-    joined = str_join(arr, "-");
-    expected = str_new("a-bb-ccc");
-
-    assert(str_compare(joined, expected, -1, false) == 0);
-
-    str_del(joined);
-    str_del(expected);
-    str_array_del(arr);
+    string_delete(s);
 }
 
-static void test_str_split(void)
+static void test_string_compare(void)
 {
-    str_t *s;
-    str_t **arr;
+    string_t *a, *b;
 
-    assert(str_split(NULL, ",") == NULL);
+    assert(string_compare(NULL, NULL, -1, false) == 0);
 
-    s = str_new("abc");
+    a = string_new("abc");
 
-    assert(str_split(s, NULL) == NULL);
+    assert(string_compare(a, NULL, -1, false) == 1);
+    assert(string_compare(NULL, a, -1, false) == -1);
 
-    str_del(s);
+    b = string_new("abcd");
 
-    /* empty string */
-    arr = str_split(empty_str(), ",");
+    assert(string_compare(a, b, -1, false) < 0);
+    assert(string_compare(b, a, -1, false) > 0);
 
-    assert(arr != NULL);
-    assert(arr[0] == NULL);
+    string_delete(b);
 
-    str_array_del(arr);
+    b = string_new("abd");
 
-    /* split into chars */
-    s = str_new("abc");
+    assert(string_compare(a, b, -1, false) < 0);
+    assert(string_compare(b, a, -1, false) > 0);
 
-    arr = str_split(s, "");
+    string_delete(b);
 
-    assert(arr != NULL);
+    b = string_new("ABC");
 
-    assert(str_compare(arr[0], str_new("a"), -1, false) == 0);
-    assert(str_compare(arr[1], str_new("b"), -1, false) == 0);
-    assert(str_compare(arr[2], str_new("c"), -1, false) == 0);
-    assert(arr[3] == NULL);
+    assert(string_compare(a, b, -1, true) == 0);
+    assert(string_compare(a, b, -1, false) > 0);
 
-    str_array_del(arr);
+    assert(string_compare(a, b, 0, false) == 0);
 
-    /* normal split */
-    arr = str_split(s, "b");
+    b = string_delete(b);
+    b = string_new("abz");
 
-    assert(arr != NULL);
+    assert(string_compare(a, b, 2, false) == 0);
 
-    assert(str_compare(arr[0], str_new("a"), -1, false) == 0);
-    assert(str_compare(arr[1], str_new("c"), -1, false) == 0);
-    assert(arr[2] == NULL);
-
-    str_array_del(arr);
-
-    /* multi-char separator */
-    str_del(s);
-
-    s = str_new("a:-b:-c");
-
-    arr = str_split(s, ":-");
-
-    assert(arr != NULL);
-
-    assert(str_compare(arr[0], str_new("a"), -1, false) == 0);
-    assert(str_compare(arr[1], str_new("b"), -1, false) == 0);
-    assert(str_compare(arr[2], str_new("c"), -1, false) == 0);
-    assert(arr[3] == NULL);
-
-    str_array_del(arr);
-    str_del(s);
-}
-
-static void test_str_ssplit(void)
-{
-    str_t *s;
-    str_t **arr;
-
-    assert(str_ssplit(NULL, ",") == NULL);
-
-    s = str_new("abc");
-
-    assert(str_ssplit(s, NULL) == NULL);
-
-    str_del(s);
-
-    /* empty string */
-    arr = str_ssplit(empty_str(), ",");
-
-    assert(arr != NULL);
-    assert(arr[0] == NULL);
-
-    str_array_del(arr);
-
-    /* split into chars */
-    s = str_new("abc");
-
-    arr = str_ssplit(s, "");
-
-    assert(arr != NULL);
-
-    assert(str_compare(arr[0], str_new("a"), -1, false) == 0);
-    assert(str_compare(arr[1], str_new("b"), -1, false) == 0);
-    assert(str_compare(arr[2], str_new("c"), -1, false) == 0);
-    assert(arr[3] == NULL);
-
-    str_array_del(arr);
-
-    /* char-set split */
-    str_del(s);
-
-    s = str_new("a:b-c");
-
-    arr = str_ssplit(s, ":-");
-
-    assert(arr != NULL);
-
-    assert(str_compare(arr[0], str_new("a"), -1, false) == 0);
-    assert(str_compare(arr[1], str_new("b"), -1, false) == 0);
-    assert(str_compare(arr[2], str_new("c"), -1, false) == 0);
-    assert(arr[3] == NULL);
-
-    str_array_del(arr);
-    str_del(s);
-}
-
-static void test_replace_null_arguments(void)
-{
-    str_t *s = str_new("hello");
-
-    assert(str_replace(NULL, "l", "x", 1) == NULL);
-    assert(str_replace(s, NULL, "x", 1) == NULL);
-    assert(str_replace(s, "l", NULL, 1) == NULL);
-
-    str_del(s);
-}
-
-static void test_replace_empty_string_singleton(void)
-{
-    str_t *r = str_replace(empty_str(), "a", "b", 1);
-
-    assert(r == empty_str());
-}
-
-static void test_replace_n_zero_returns_clone(void)
-{
-    str_t *s = str_new("hello world");
-    str_t *r = str_replace(s, "world", "earth", 0);
-
-    assert(r != NULL);
-    assert(r != s);
-    assert(strcmp(str_cstr(r), "hello world") == 0);
-    assert(str_length(r) == strlen("hello world"));
-
-    str_del(s);
-    str_del(r);
-}
-
-static void test_replace_substring_not_found(void)
-{
-    str_t *s = str_new("abcdef");
-    str_t *r = str_replace(s, "xyz", "123", 5);
-
-    assert(r != NULL);
-    assert(r != s);
-    assert(strcmp(str_cstr(r), "abcdef") == 0);
-    assert(str_length(r) == 6);
-
-    str_del(s);
-    str_del(r);
-}
-
-static void test_replace_replace_single_occurrence(void)
-{
-    str_t *s = str_new("abc abc abc");
-    str_t *r = str_replace(s, "abc", "xyz", 1);
-
-    assert(r != NULL);
-    assert(strcmp(str_cstr(r), "xyz abc abc") == 0);
-    assert(str_length(r) == strlen("xyz abc abc"));
-
-    str_del(s);
-    str_del(r);
-}
-
-static void test_replace_replace_multiple_occurrences(void)
-{
-    str_t *s = str_new("abc abc abc");
-    str_t *r = str_replace(s, "abc", "xyz", 2);
-
-    assert(r != NULL);
-    assert(strcmp(str_cstr(r), "xyz xyz abc") == 0);
-    assert(str_length(r) == strlen("xyz xyz abc"));
-
-    str_del(s);
-    str_del(r);
-}
-
-static void test_replace_replace_all_occurrences_with_negative_n(void)
-{
-    str_t *s = str_new("one two one two one");
-    str_t *r = str_replace(s, "one", "1", -1);
-
-    assert(r != NULL);
-    assert(strcmp(str_cstr(r), "1 two 1 two 1") == 0);
-    assert(str_length(r) == strlen("1 two 1 two 1"));
-
-    str_del(s);
-    str_del(r);
-}
-
-static void test_replace_replace_when_n_exceeds_occurrences(void)
-{
-    str_t *s = str_new("cat dog cat");
-    str_t *r = str_replace(s, "cat", "fox", 10);
-
-    assert(r != NULL);
-    assert(strcmp(str_cstr(r), "fox dog fox") == 0);
-    assert(str_length(r) == strlen("fox dog fox"));
-
-    str_del(s);
-    str_del(r);
-}
-
-static void test_replace_replacement_shorter_than_substring(void)
-{
-    str_t *s = str_new("aaaaaa");
-    str_t *r = str_replace(s, "aa", "b", -1);
-
-    assert(r != NULL);
-    assert(strcmp(str_cstr(r), "bbb") == 0);
-    assert(str_length(r) == 3);
-
-    str_del(s);
-    str_del(r);
-}
-
-static void test_replace_replacement_longer_than_substring(void)
-{
-    str_t *s = str_new("xx yy xx");
-    str_t *r = str_replace(s, "xx", "LONG", -1);
-
-    assert(r != NULL);
-    assert(strcmp(str_cstr(r), "LONG yy LONG") == 0);
-    assert(str_length(r) == strlen("LONG yy LONG"));
-
-    str_del(s);
-    str_del(r);
-}
-
-static void test_replace_replace_with_empty_replacement(void)
-{
-    str_t *s = str_new("abc123abc123");
-    str_t *r = str_replace(s, "123", "", -1);
-
-    assert(r != NULL);
-    assert(strcmp(str_cstr(r), "abcabc") == 0);
-    assert(str_length(r) == 6);
-
-    str_del(s);
-    str_del(r);
-}
-
-static void test_replace_empty_substring_and_empty_replacement(void)
-{
-    str_t *s = str_new("hello");
-    str_t *r = str_replace(s, "", "", 5);
-
-    assert(r != NULL);
-    assert(r != s);
-    assert(strcmp(str_cstr(r), "hello") == 0);
-    assert(str_length(r) == 5);
-
-    str_del(s);
-    str_del(r);
-}
-
-static void test_replace_empty_substring_insert_prefix_once(void)
-{
-    str_t *s = str_new("abc");
-    str_t *r = str_replace(s, "", "X", 1);
-
-    assert(r != NULL);
-    assert(strcmp(str_cstr(r), "Xabc") == 0);
-    assert(str_length(r) == 4);
-
-    str_del(s);
-    str_del(r);
-}
-
-static void test_replace_empty_substring_insert_multiple_times(void)
-{
-    str_t *s = str_new("abc");
-    str_t *r = str_replace(s, "", "-", 4);
-
-    /*
-     * Current implementation behavior:
-     * "-a-b-c-"
-     */
-    assert(r != NULL);
-    assert(strcmp(str_cstr(r), "-a-b-c-") == 0);
-    assert(str_length(r) == strlen("-a-b-c-"));
-
-    str_del(s);
-    str_del(r);
-}
-
-static void test_replace_empty_substring_with_negative_n(void)
-{
-    str_t *s = str_new("abc");
-    str_t *r = str_replace(s, "", "+", -1);
-
-    assert(r != NULL);
-    assert(strcmp(str_cstr(r), "+a+b+c+") == 0);
-    assert(str_length(r) == strlen("+a+b+c+"));
-
-    str_del(s);
-    str_del(r);
-}
-
-static void test_replace_empty_substring_n_exceeds_length_plus_one(void)
-{
-    str_t *s = str_new("ab");
-    str_t *r = str_replace(s, "", "Z", 100);
-
-    assert(r != NULL);
-    assert(strcmp(str_cstr(r), "ZaZbZ") == 0);
-    assert(str_length(r) == strlen("ZaZbZ"));
-
-    str_del(s);
-    str_del(r);
-}
-
-static void test_replace_overlapping_substrings(void)
-{
-    str_t *s = str_new("aaaaa");
-    str_t *r = str_replace(s, "aa", "X", -1);
-
-    /*
-     * Non-overlapping replacement behavior.
-     * Matches at positions 0 and 2.
-     */
-    assert(r != NULL);
-    assert(strcmp(str_cstr(r), "XXa") == 0);
-    assert(str_length(r) == 3);
-
-    str_del(s);
-    str_del(r);
-}
-
-/*****************************************************************************
- * Additional semantic and regression-oriented tests for str_replace()
- *****************************************************************************/
-
-static void test_replace_empty_substring_zero_length_input(void)
-{
-    str_t *r;
-
-    r = str_replace(empty_str(), "", "X", -1);
-
-    /*
-     * Empty string has exactly one empty-substring position.
-     */
-    assert(r == empty_str());
-
-    /*
-     * Current API special-cases empty_str().
-     * This test mainly ensures no crash/regression.
-     */
-}
-
-static void test_replace_exact_occurrence_count(void)
-{
-    str_t *s, *r;
-
-    s = str_new("x x x");
-
-    /*
-     * Exactly two replacements.
-     */
-    r = str_replace(s, "x", "y", 2);
-
-    assert(r != NULL);
-    assert(strcmp(str_cstr(r), "y y x") == 0);
-    assert(str_length(r) == 5);
-
-    str_del(r);
-    str_del(s);
-}
-
-static void test_replace_occurrence_at_end(void)
-{
-    str_t *s, *r;
-
-    s = str_new("abc123");
-
-    r = str_replace(s, "123", "XYZ", 1);
-
-    assert(r != NULL);
-    assert(strcmp(str_cstr(r), "abcXYZ") == 0);
-    assert(str_length(r) == 6);
-
-    str_del(r);
-    str_del(s);
-}
-
-static void test_replace_occurrence_at_beginning(void)
-{
-    str_t *s, *r;
-
-    s = str_new("123abc");
-
-    r = str_replace(s, "123", "XYZ", 1);
-
-    assert(r != NULL);
-    assert(strcmp(str_cstr(r), "XYZabc") == 0);
-    assert(str_length(r) == 6);
-
-    str_del(r);
-    str_del(s);
-}
-
-static void test_replace_entire_string(void)
-{
-    str_t *s, *r;
-
-    s = str_new("abcdef");
-
-    r = str_replace(s, "abcdef", "X", 1);
-
-    assert(r != NULL);
-    assert(strcmp(str_cstr(r), "X") == 0);
-    assert(str_length(r) == 1);
-
-    str_del(r);
-    str_del(s);
-}
-
-static void test_replace_with_same_string(void)
-{
-    str_t *s, *r;
-
-    s = str_new("abc abc");
-
-    r = str_replace(s, "abc", "abc", -1);
-
-    /*
-     * Semantic correctness:
-     * result content must remain identical.
-     */
-    assert(r != NULL);
-    assert(strcmp(str_cstr(r), "abc abc") == 0);
-    assert(str_length(r) == 7);
-
-    /*
-     * Should still be a distinct allocation.
-     */
-    assert(r != s);
-
-    str_del(r);
-    str_del(s);
-}
-
-static void test_replace_partial_overlap_not_revisited(void)
-{
-    str_t *s, *r;
-
-    s = str_new("abababa");
-
-    /*
-     * Non-overlapping search progression.
-     *
-     * Replace "aba":
-     * matches at positions 0 and 4.
-     */
-    r = str_replace(s, "aba", "X", -1);
-
-    assert(r != NULL);
-    assert(strcmp(str_cstr(r), "XbX") == 0);
-
-    str_del(r);
-    str_del(s);
-}
-
-static void test_replace_empty_substring_two_insertions(void)
-{
-    str_t *s, *r;
-
-    s = str_new("abc");
-
-    /*
-     * Replace first two empty-substring positions.
-     *
-     * Expected:
-     * "_a_bc"
-     */
-    r = str_replace(s, "", "_", 2);
-
-    assert(r != NULL);
-    assert(strcmp(str_cstr(r), "_a_bc") == 0);
-    assert(str_length(r) == 5);
-
-    str_del(r);
-    str_del(s);
-}
-
-static void test_replace_empty_substring_middle_behavior(void)
-{
-    str_t *s, *r;
-
-    s = str_new("abc");
-
-    /*
-     * Three insertion points:
-     * before a
-     * between a/b
-     * between b/c
-     */
-    r = str_replace(s, "", ".", 3);
-
-    assert(r != NULL);
-    assert(strcmp(str_cstr(r), ".a.b.c") == 0);
-    assert(str_length(r) == 6);
-
-    str_del(r);
-    str_del(s);
-}
-
-static void test_replace_remove_entire_contents(void)
-{
-    str_t *s, *r;
-
-    s = str_new("xxxx");
-
-    r = str_replace(s, "x", "", -1);
-
-    /*
-     * All content removed.
-     */
-    assert(r != NULL);
-
-    /*
-     * Current implementation returns allocated empty string,
-     * not necessarily empty_str().
-     *
-     * Validate semantics only.
-     */
-    assert(strcmp(str_cstr(r), "") == 0);
-    assert(str_length(r) == 0);
-
-    str_del(r);
-    str_del(s);
-}
-
-static void test_replace_separator_style_pattern(void)
-{
-    str_t *s, *r;
-
-    s = str_new("a,b,c,d");
-
-    r = str_replace(s, ",", "::", 2);
-
-    assert(r != NULL);
-    assert(strcmp(str_cstr(r), "a::b::c,d") == 0);
-
-    str_del(r);
-    str_del(s);
-}
-
-static void test_replace_no_mutation_of_original(void)
-{
-    str_t *s, *r;
-
-    s = str_new("hello world");
-
-    r = str_replace(s, "world", "earth", 1);
-
-    assert(r != NULL);
-
-    /*
-     * Original string must remain unchanged.
-     */
-    assert(strcmp(str_cstr(s), "hello world") == 0);
-
-    /*
-     * Returned string must contain replacement.
-     */
-    assert(strcmp(str_cstr(r), "hello earth") == 0);
-
-    str_del(r);
-    str_del(s);
+    string_delete(a);
+    string_delete(b);
 }
 
 static void test_compare_prefix_lengths(void)
 {
-    str_t *a, *b;
+    string_t *a, *b;
 
-    a = str_new("abcdef");
-    b = str_new("abcxyz");
+    a = string_new("abcdef");
+    b = string_new("abcxyz");
 
-    /*
-     * First 3 chars identical.
-     */
-    assert(str_compare(a, b, 3, false) == 0);
+    assert(string_compare(a, b, 3, false) == 0);
+    assert(string_compare(a, b, 4, false) < 0);
 
-    /*
-     * First 4 chars differ.
-     */
-    assert(str_compare(a, b, 4, false) < 0);
-
-    str_del(a);
-    str_del(b);
+    string_delete(a);
+    string_delete(b);
 }
 
 static void test_compare_case_insensitive_partial(void)
 {
-    str_t *a, *b;
+    string_t *a, *b;
 
-    a = str_new("AbCdEf");
-    b = str_new("abcdef");
+    a = string_new("AbCdEf");
+    b = string_new("abcdef");
 
-    assert(str_compare(a, b, 6, true) == 0);
-    assert(str_compare(a, b, 6, false) != 0);
+    assert(string_compare(a, b, 6, true) == 0);
+    assert(string_compare(a, b, 6, false) != 0);
 
-    str_del(a);
-    str_del(b);
+    string_delete(a);
+    string_delete(b);
 }
 
 static void test_compare_negative_n(void)
 {
-    str_t *a, *b;
+    string_t *a, *b;
 
-    a = str_new("abc");
-    b = str_new("abc");
+    a = string_new("abc");
+    b = string_new("abc");
 
-    /*
-     * Negative n means compare entire strings.
-     */
-    assert(str_compare(a, b, -1, false) == 0);
+    assert(string_compare(a, b, -1, false) == 0);
 
-    str_del(a);
-    str_del(b);
-}
-
-static void test_compare_empty_strings(void)
-{
-    assert(str_compare(empty_str(), empty_str(), -1, false) == 0);
+    string_delete(a);
+    string_delete(b);
 }
 
 static void test_compare_empty_vs_nonempty(void)
 {
-    str_t *s;
+    string_t *s;
 
-    s = str_new("x");
+    s = string_new("x");
 
-    assert(str_compare(empty_str(), s, -1, false) < 0);
-    assert(str_compare(s, empty_str(), -1, false) > 0);
+    assert(string_compare(string_new(""), s, -1, false) < 0);
+    assert(string_compare(s, string_new(""), -1, false) > 0);
 
-    str_del(s);
+    string_delete(s);
+}
+
+static void test_string_starts_with(void)
+{
+    string_t *s;
+
+    s = string_new("hello world");
+
+    assert(string_starts_with(s, "hello") == true);
+    assert(string_starts_with(s, "world") == false);
+
+    string_delete(s);
+}
+
+static void test_string_ends_with(void)
+{
+    string_t *s;
+
+    s = string_new("hello world");
+
+    assert(string_ends_with(s, "world") == true);
+    assert(string_ends_with(s, "hello") == false);
+
+    string_delete(s);
+}
+
+static void test_string_contains(void)
+{
+    string_t *s;
+
+    s = string_new("hello world");
+
+    assert(string_contains(s, "hello") == true);
+    assert(string_contains(s, "world") == true);
+    assert(string_contains(s, "xyz") == false);
+
+    string_delete(s);
+}
+
+static void test_string_find(void)
+{
+    string_t *s;
+
+    s = string_new("hello world");
+
+    assert(string_find(NULL, 0, "hello") == -1);
+    assert(string_find(s, 100, "hello") == -1);
+    assert(string_find(s, 0, NULL) == -1);
+
+    assert(string_find(s, 0, "hello") == 0);
+    assert(string_find(s, 0, "world") == 6);
+    assert(string_find(s, 3, "world") == 6);
+
+    assert(string_find(s, 0, "xyz") == -1);
+
+    string_delete(s);
 }
 
 static void test_contains_empty_substring(void)
 {
-    str_t *s;
+    string_t *s;
 
-    s = str_new("abcdef");
+    s = string_new("abcdef");
 
-    /*
-     * strstr() semantics:
-     * empty substring matches immediately.
-     */
-    assert(str_contains(s, 0, "") == 0);
-    assert(str_contains(s, 3, "") == 3);
-    assert(str_contains(s, 6, "") == 6);
+    assert(string_find(s, 0, "") == 0);
+    assert(string_find(s, 3, "") == 3);
+    assert(string_find(s, 6, "") == 6);
 
-    str_del(s);
+    string_delete(s);
 }
 
 static void test_contains_overlapping_pattern(void)
 {
-    str_t *s;
+    string_t *s;
 
-    s = str_new("aaaaa");
+    s = string_new("aaaaa");
 
-    assert(str_contains(s, 0, "aa") == 0);
-    assert(str_contains(s, 1, "aa") == 1);
-    assert(str_contains(s, 2, "aa") == 2);
-    assert(str_contains(s, 3, "aa") == 3);
+    assert(string_find(s, 0, "aa") == 0);
+    assert(string_find(s, 1, "aa") == 1);
+    assert(string_find(s, 2, "aa") == 2);
+    assert(string_find(s, 3, "aa") == 3);
 
-    str_del(s);
+    string_delete(s);
 }
 
 static void test_contains_at_end_boundary(void)
 {
-    str_t *s;
+    string_t *s;
 
-    s = str_new("abcdef");
+    s = string_new("abcdef");
 
-    assert(str_contains(s, 5, "f") == 5);
-    assert(str_contains(s, 6, "") == 6);
-    assert(str_contains(s, 6, "x") == -1);
+    assert(string_find(s, 5, "f") == 5);
+    assert(string_find(s, 6, "") == 6);
+    assert(string_find(s, 6, "x") == -1);
 
-    str_del(s);
+    string_delete(s);
+}
+
+static void test_string_rfind(void)
+{
+    string_t *s;
+
+    s = string_new("abc def abc def");
+
+    assert(string_rfind(NULL, -1, "abc") == -1);
+    assert(string_rfind(s, -1, NULL) == -1);
+
+    assert(string_rfind(s, s->length, "abc") == 8);
+    assert(string_rfind(s, 8, "abc") == 0);
+    assert(string_rfind(s, s->length, "def") == 12);
+    assert(string_rfind(s, 12, "def") == 4);
+
+    string_delete(s);
+}
+
+static void test_string_substr(void)
+{
+    string_t *s, *sub;
+
+    assert(string_substr(NULL, 0, 1) == NULL);
+
+    s = string_new("abcdef");
+
+    sub = string_substr(s, 2, 2);
+
+    assert(strcmp(string_cstr(sub), "cd") == 0);
+
+    string_delete(sub);
+
+    sub = string_substr(s, 2, -1);
+
+    assert(strcmp(string_cstr(sub), "cdef") == 0);
+
+    string_delete(sub);
+
+    sub = string_substr(s, 4, 100);
+
+    assert(strcmp(string_cstr(sub), "ef") == 0);
+
+    string_delete(sub);
+
+    string_delete(s);
 }
 
 static void test_substr_full_string(void)
 {
-    str_t *s, *sub;
+    string_t *s, *sub;
 
-    s = str_new("abcdef");
+    s = string_new("abcdef");
 
-    sub = str_substr(s, 0, -1);
+    sub = string_substr(s, 0, -1);
 
-    assert(strcmp(str_cstr(sub), "abcdef") == 0);
+    assert(strcmp(string_cstr(sub), "abcdef") == 0);
     assert(sub != s);
 
-    str_del(sub);
-    str_del(s);
-}
-
-static void test_substr_empty_from_end(void)
-{
-    str_t *s, *sub;
-
-    s = str_new("abcdef");
-
-    sub = str_substr(s, 6, 0);
-
-    assert(sub == empty_str());
-
-    str_del(s);
+    string_delete(sub);
+    string_delete(s);
 }
 
 static void test_substr_last_character(void)
 {
-    str_t *s, *sub;
+    string_t *s, *sub;
 
-    s = str_new("abcdef");
+    s = string_new("abcdef");
 
-    sub = str_substr(s, 5, 1);
+    sub = string_substr(s, 5, 1);
 
-    assert(strcmp(str_cstr(sub), "f") == 0);
-    assert(str_length(sub) == 1);
+    assert(strcmp(string_cstr(sub), "f") == 0);
 
-    str_del(sub);
-    str_del(s);
+    string_delete(sub);
+    string_delete(s);
+}
+
+static void test_string_append(void)
+{
+    string_t *s;
+
+    s = string_new("abc");
+
+    assert(string_append(s, "def") == true);
+
+    assert(strcmp(string_cstr(s), "abcdef") == 0);
+
+    string_delete(s);
+}
+
+static void test_string_appendn(void)
+{
+    string_t *s;
+
+    s = string_new("abc");
+
+    assert(string_appendn(s, "defghi", 3) == true);
+
+    assert(strcmp(string_cstr(s), "abcdef") == 0);
+
+    string_delete(s);
+}
+
+static void test_string_insert(void)
+{
+    string_t *s;
+
+    s = string_new("abef");
+
+    assert(string_insert(s, 2, "cd") == true);
+
+    assert(strcmp(string_cstr(s), "abcdef") == 0);
+
+    string_delete(s);
+}
+
+static void test_string_insertn(void)
+{
+    string_t *s;
+
+    s = string_new("abgh");
+
+    assert(string_insertn(s, 2, "cdef", 2) == true);
+
+    assert(strcmp(string_cstr(s), "abcdgh") == 0);
+
+    string_delete(s);
+}
+
+static void test_replace_null_arguments(void)
+{
+    string_t *s = string_new("hello");
+
+    assert(string_replace(NULL, "l", "x", 1) == false);
+    assert(string_replace(s, NULL, "x", 1) == false);
+    assert(string_replace(s, "l", NULL, 1) == false);
+
+    string_delete(s);
+}
+
+static void test_replace_n_zero_no_change(void)
+{
+    string_t *s = string_new("hello world");
+
+    assert(string_replace(s, "world", "earth", 0) == true);
+
+    assert(strcmp(string_cstr(s), "hello world") == 0);
+
+    string_delete(s);
+}
+
+static void test_replace_substring_not_found(void)
+{
+    string_t *s = string_new("abcdef");
+
+    assert(string_replace(s, "xyz", "123", 5) == true);
+
+    assert(strcmp(string_cstr(s), "abcdef") == 0);
+
+    string_delete(s);
+}
+
+static void test_replace_replace_single_occurrence(void)
+{
+    string_t *s = string_new("abc abc abc");
+
+    assert(string_replace(s, "abc", "xyz", 1) == true);
+
+    assert(strcmp(string_cstr(s), "xyz abc abc") == 0);
+
+    string_delete(s);
+}
+
+static void test_replace_replace_multiple_occurrences(void)
+{
+    string_t *s = string_new("abc abc abc");
+
+    assert(string_replace(s, "abc", "xyz", 2) == true);
+
+    assert(strcmp(string_cstr(s), "xyz xyz abc") == 0);
+
+    string_delete(s);
+}
+
+static void test_replace_replace_all_occurrences_with_negative_n(void)
+{
+    string_t *s = string_new("one two one two one");
+
+    assert(string_replace(s, "one", "1", -1) == true);
+
+    assert(strcmp(string_cstr(s), "1 two 1 two 1") == 0);
+
+    string_delete(s);
+}
+
+static void test_replace_replace_when_n_exceeds_occurrences(void)
+{
+    string_t *s = string_new("cat dog cat");
+
+    assert(string_replace(s, "cat", "fox", 10) == true);
+
+    assert(strcmp(string_cstr(s), "fox dog fox") == 0);
+
+    string_delete(s);
+}
+
+static void test_replace_replacement_shorter_than_substring(void)
+{
+    string_t *s = string_new("aaaaaa");
+
+    assert(string_replace(s, "aa", "b", -1) == true);
+
+    assert(strcmp(string_cstr(s), "bbb") == 0);
+
+    string_delete(s);
+}
+
+static void test_replace_replacement_longer_than_substring(void)
+{
+    string_t *s = string_new("xx yy xx");
+
+    assert(string_replace(s, "xx", "LONG", -1) == true);
+
+    assert(strcmp(string_cstr(s), "LONG yy LONG") == 0);
+
+    string_delete(s);
+}
+
+static void test_replace_replace_with_empty_replacement(void)
+{
+    string_t *s = string_new("abc123abc123");
+
+    assert(string_replace(s, "123", "", -1) == true);
+
+    assert(strcmp(string_cstr(s), "abcabc") == 0);
+
+    string_delete(s);
+}
+
+static void test_replace_empty_substring_and_empty_replacement(void)
+{
+    string_t *s = string_new("hello");
+
+    assert(string_replace(s, "", "", 5) == true);
+
+    assert(strcmp(string_cstr(s), "hello") == 0);
+
+    string_delete(s);
+}
+
+static void test_replace_empty_substring_insert_prefix_once(void)
+{
+    string_t *s = string_new("abc");
+
+    assert(string_replace(s, "", "X", 1) == true);
+
+    assert(strcmp(string_cstr(s), "Xabc") == 0);
+
+    string_delete(s);
+}
+
+static void test_replace_empty_substring_insert_multiple_times(void)
+{
+    string_t *s = string_new("abc");
+
+    assert(string_replace(s, "", "-", 4) == true);
+
+    assert(strcmp(string_cstr(s), "-a-b-c-") == 0);
+
+    string_delete(s);
+}
+
+static void test_replace_empty_substring_with_negative_n(void)
+{
+    string_t *s = string_new("abc");
+
+    assert(string_replace(s, "", "+", -1) == true);
+
+    assert(strcmp(string_cstr(s), "+a+b+c+") == 0);
+
+    string_delete(s);
+}
+
+static void test_replace_overlapping_substrings(void)
+{
+    string_t *s = string_new("aaaaa");
+
+    assert(string_replace(s, "aa", "X", -1) == true);
+
+    assert(strcmp(string_cstr(s), "XXa") == 0);
+
+    string_delete(s);
+}
+
+static void test_replace_occurrence_at_end(void)
+{
+    string_t *s;
+
+    s = string_new("abc123");
+
+    assert(string_replace(s, "123", "XYZ", 1) == true);
+
+    assert(strcmp(string_cstr(s), "abcXYZ") == 0);
+
+    string_delete(s);
+}
+
+static void test_replace_occurrence_at_beginning(void)
+{
+    string_t *s;
+
+    s = string_new("123abc");
+
+    assert(string_replace(s, "123", "XYZ", 1) == true);
+
+    assert(strcmp(string_cstr(s), "XYZabc") == 0);
+
+    string_delete(s);
+}
+
+static void test_replace_entire_string(void)
+{
+    string_t *s;
+
+    s = string_new("abcdef");
+
+    assert(string_replace(s, "abcdef", "X", 1) == true);
+
+    assert(strcmp(string_cstr(s), "X") == 0);
+
+    string_delete(s);
+}
+
+static void test_replace_with_same_string(void)
+{
+    string_t *s;
+
+    s = string_new("abc abc");
+
+    assert(string_replace(s, "abc", "abc", -1) == true);
+
+    assert(strcmp(string_cstr(s), "abc abc") == 0);
+
+    string_delete(s);
+}
+
+static void test_replace_partial_overlap_not_revisited(void)
+{
+    string_t *s;
+
+    s = string_new("abababa");
+
+    assert(string_replace(s, "aba", "X", -1) == true);
+
+    assert(strcmp(string_cstr(s), "XbX") == 0);
+
+    string_delete(s);
+}
+
+static void test_replace_remove_entire_contents(void)
+{
+    string_t *s;
+
+    s = string_new("xxxx");
+
+    assert(string_replace(s, "x", "", -1) == true);
+
+    assert(strcmp(string_cstr(s), "") == 0);
+    assert(string_length(s) == 0);
+
+    string_delete(s);
+}
+
+static void test_replace_separator_style_pattern(void)
+{
+    string_t *s;
+
+    s = string_new("a,b,c,d");
+
+    assert(string_replace(s, ",", "::", 2) == true);
+
+    assert(strcmp(string_cstr(s), "a::b::c,d") == 0);
+
+    string_delete(s);
+}
+
+static void test_remove_prefix(void)
+{
+    string_t *s;
+
+    s = string_new("abcdef");
+
+    string_remove_prefix(s, 2);
+
+    assert(strcmp(string_cstr(s), "cdef") == 0);
+
+    string_delete(s);
+}
+
+static void test_remove_suffix(void)
+{
+    string_t *s;
+
+    s = string_new("abcdef");
+
+    string_remove_suffix(s, 2);
+
+    assert(strcmp(string_cstr(s), "abcd") == 0);
+
+    string_delete(s);
+}
+
+static void test_trim(void)
+{
+    string_t *s;
+
+    s = string_new(" \t hello world \n ");
+
+    string_trim(s);
+
+    assert(strcmp(string_cstr(s), "hello world") == 0);
+
+    string_delete(s);
+}
+
+static void test_trim_leading_ws(void)
+{
+    string_t *s;
+
+    s = string_new(" \t hello");
+
+    string_trim_leading_ws(s);
+
+    assert(strcmp(string_cstr(s), "hello") == 0);
+
+    string_delete(s);
+}
+
+static void test_trim_trailing_ws(void)
+{
+    string_t *s;
+
+    s = string_new("hello \t \n");
+
+    string_trim_trailing_ws(s);
+
+    assert(strcmp(string_cstr(s), "hello") == 0);
+
+    string_delete(s);
+}
+
+static void test_string_join(void)
+{
+    string_t **arr;
+    string_t *joined;
+
+    assert(string_join(NULL, ",") == NULL);
+
+    arr = string_array_new(4);
+
+    arr[0] = string_new("a");
+    arr[1] = string_new("bb");
+    arr[2] = string_new("ccc");
+    arr[3] = NULL;
+
+    joined = string_join(arr, "-");
+
+    assert(joined != NULL);
+    assert(strcmp(string_cstr(joined), "a-bb-ccc") == 0);
+
+    string_delete(joined);
+    string_array_del(arr);
 }
 
 static void test_join_single_element(void)
 {
-    str_t **arr;
-    str_t *joined;
+    string_t **arr;
+    string_t *joined;
 
-    arr = str_array_new(2);
+    arr = string_array_new(2);
 
-    arr[0] = str_new("only");
+    arr[0] = string_new("only");
     arr[1] = NULL;
 
-    joined = str_join(arr, ",");
+    joined = string_join(arr, ",");
 
-    assert(strcmp(str_cstr(joined), "only") == 0);
-    assert(str_length(joined) == 4);
+    assert(strcmp(string_cstr(joined), "only") == 0);
 
-    str_del(joined);
-    str_array_del(arr);
+    string_delete(joined);
+    string_array_del(arr);
 }
 
 static void test_join_empty_separator(void)
 {
-    str_t **arr;
-    str_t *joined;
+    string_t **arr;
+    string_t *joined;
 
-    arr = str_array_new(4);
+    arr = string_array_new(4);
 
-    arr[0] = str_new("ab");
-    arr[1] = str_new("cd");
-    arr[2] = str_new("ef");
+    arr[0] = string_new("ab");
+    arr[1] = string_new("cd");
+    arr[2] = string_new("ef");
     arr[3] = NULL;
 
-    joined = str_join(arr, "");
+    joined = string_join(arr, "");
 
-    assert(strcmp(str_cstr(joined), "abcdef") == 0);
+    assert(strcmp(string_cstr(joined), "abcdef") == 0);
 
-    str_del(joined);
-    str_array_del(arr);
+    string_delete(joined);
+    string_array_del(arr);
 }
 
 static void test_join_with_empty_strings(void)
 {
-    str_t **arr;
-    str_t *joined;
+    string_t **arr;
+    string_t *joined;
 
-    arr = str_array_new(4);
+    arr = string_array_new(4);
 
-    arr[0] = empty_str();
-    arr[1] = str_new("x");
-    arr[2] = empty_str();
+    arr[0] = string_new("");
+    arr[1] = string_new("x");
+    arr[2] = string_new("");
     arr[3] = NULL;
 
-    joined = str_join(arr, ":");
-    
-    assert(strcmp(str_cstr(joined), ":x:") == 0);
+    joined = string_join(arr, ":");
 
-    str_del(joined);
-    str_array_del(arr);
+    assert(strcmp(string_cstr(joined), ":x:") == 0);
+
+    string_delete(joined);
+    string_array_del(arr);
+}
+
+static void test_string_split(void)
+{
+    string_t *s;
+    string_t **arr;
+
+    assert(string_split(NULL, ",") == NULL);
+
+    s = string_new("a:-b:-c");
+
+    arr = string_split(s, ":-");
+
+    assert(arr != NULL);
+
+    assert(strcmp(string_cstr(arr[0]), "a") == 0);
+    assert(strcmp(string_cstr(arr[1]), "b") == 0);
+    assert(strcmp(string_cstr(arr[2]), "c") == 0);
+    assert(arr[3] == NULL);
+
+    string_array_del(arr);
+    string_delete(s);
 }
 
 static void test_split_separator_not_present(void)
 {
-    str_t *s;
-    str_t **arr;
+    string_t *s;
+    string_t **arr;
 
-    s = str_new("abcdef");
+    s = string_new("abcdef");
 
-    arr = str_split(s, ",");
+    arr = string_split(s, ",");
 
-    assert(arr != NULL);
-    assert(strcmp(str_cstr(arr[0]), "abcdef") == 0);
+    assert(strcmp(string_cstr(arr[0]), "abcdef") == 0);
     assert(arr[1] == NULL);
 
-    str_array_del(arr);
-    str_del(s);
+    string_array_del(arr);
+    string_delete(s);
 }
 
 static void test_split_separator_at_beginning(void)
 {
-    str_t *s;
-    str_t **arr;
+    string_t *s;
+    string_t **arr;
 
-    s = str_new(",abc");
+    s = string_new(",abc");
 
-    arr = str_split(s, ",");
+    arr = string_split(s, ",");
 
-    assert(strcmp(str_cstr(arr[0]), "") == 0);
-    assert(strcmp(str_cstr(arr[1]), "abc") == 0);
+    assert(strcmp(string_cstr(arr[0]), "") == 0);
+    assert(strcmp(string_cstr(arr[1]), "abc") == 0);
     assert(arr[2] == NULL);
 
-    str_array_del(arr);
-    str_del(s);
+    string_array_del(arr);
+    string_delete(s);
 }
 
 static void test_split_separator_at_end(void)
 {
-    str_t *s;
-    str_t **arr;
+    string_t *s;
+    string_t **arr;
 
-    s = str_new("abc,");
+    s = string_new("abc,");
 
-    arr = str_split(s, ",");
+    arr = string_split(s, ",");
 
-    assert(strcmp(str_cstr(arr[0]), "abc") == 0);
-    assert(strcmp(str_cstr(arr[1]), "") == 0);
+    assert(strcmp(string_cstr(arr[0]), "abc") == 0);
+    assert(strcmp(string_cstr(arr[1]), "") == 0);
     assert(arr[2] == NULL);
 
-    str_array_del(arr);
-    str_del(s);
+    string_array_del(arr);
+    string_delete(s);
 }
 
 static void test_split_consecutive_separators(void)
 {
-    str_t *s;
-    str_t **arr;
+    string_t *s;
+    string_t **arr;
 
-    s = str_new("a,,b");
+    s = string_new("a,,b");
 
-    arr = str_split(s, ",");
+    arr = string_split(s, ",");
 
-    assert(strcmp(str_cstr(arr[0]), "a") == 0);
-    assert(strcmp(str_cstr(arr[1]), "") == 0);
-    assert(strcmp(str_cstr(arr[2]), "b") == 0);
+    assert(strcmp(string_cstr(arr[0]), "a") == 0);
+    assert(strcmp(string_cstr(arr[1]), "") == 0);
+    assert(strcmp(string_cstr(arr[2]), "b") == 0);
     assert(arr[3] == NULL);
 
-    str_array_del(arr);
-    str_del(s);
+    string_array_del(arr);
+    string_delete(s);
 }
 
 static void test_split_entire_string_as_separator(void)
 {
-    str_t *s;
-    str_t **arr;
+    string_t *s;
+    string_t **arr;
 
-    s = str_new("XYZ");
+    s = string_new("XYZ");
 
-    arr = str_split(s, "XYZ");
+    arr = string_split(s, "XYZ");
 
-    assert(strcmp(str_cstr(arr[0]), "") == 0);
-    assert(strcmp(str_cstr(arr[1]), "") == 0);
+    assert(strcmp(string_cstr(arr[0]), "") == 0);
+    assert(strcmp(string_cstr(arr[1]), "") == 0);
     assert(arr[2] == NULL);
 
-    str_array_del(arr);
-    str_del(s);
+    string_array_del(arr);
+    string_delete(s);
+}
+
+static void test_string_ssplit(void)
+{
+    string_t *s;
+    string_t **arr;
+
+    assert(string_ssplit(NULL, ",") == NULL);
+
+    s = string_new("a:b-c");
+
+    arr = string_ssplit(s, ":-");
+
+    assert(strcmp(string_cstr(arr[0]), "a") == 0);
+    assert(strcmp(string_cstr(arr[1]), "b") == 0);
+    assert(strcmp(string_cstr(arr[2]), "c") == 0);
+    assert(arr[3] == NULL);
+
+    string_array_del(arr);
+    string_delete(s);
 }
 
 static void test_ssplit_separator_not_present(void)
 {
-    str_t *s;
-    str_t **arr;
+    string_t *s;
+    string_t **arr;
 
-    s = str_new("abcdef");
+    s = string_new("abcdef");
 
-    arr = str_ssplit(s, ",");
+    arr = string_ssplit(s, ",");
 
-    assert(strcmp(str_cstr(arr[0]), "abcdef") == 0);
+    assert(strcmp(string_cstr(arr[0]), "abcdef") == 0);
     assert(arr[1] == NULL);
 
-    str_array_del(arr);
-    str_del(s);
+    string_array_del(arr);
+    string_delete(s);
 }
 
 static void test_ssplit_consecutive_delimiters(void)
 {
-    str_t *s;
-    str_t **arr;
+    string_t *s;
+    string_t **arr;
 
-    s = str_new("a::b--c");
+    s = string_new("a::b--c");
 
-    arr = str_ssplit(s, ":-");
+    arr = string_ssplit(s, ":-");
 
-    assert(strcmp(str_cstr(arr[0]), "a") == 0);
-    assert(strcmp(str_cstr(arr[1]), "") == 0);
-    assert(strcmp(str_cstr(arr[2]), "b") == 0);
-    assert(strcmp(str_cstr(arr[3]), "") == 0);
-    assert(strcmp(str_cstr(arr[4]), "c") == 0);
+    assert(strcmp(string_cstr(arr[0]), "a") == 0);
+    assert(strcmp(string_cstr(arr[1]), "") == 0);
+    assert(strcmp(string_cstr(arr[2]), "b") == 0);
+    assert(strcmp(string_cstr(arr[3]), "") == 0);
+    assert(strcmp(string_cstr(arr[4]), "c") == 0);
     assert(arr[5] == NULL);
 
-    str_array_del(arr);
-    str_del(s);
+    string_array_del(arr);
+    string_delete(s);
 }
 
 static void test_ssplit_delimiter_at_edges(void)
 {
-    str_t *s;
-    str_t **arr;
+    string_t *s;
+    string_t **arr;
 
-    s = str_new(":abc-");
+    s = string_new(":abc-");
 
-    arr = str_ssplit(s, ":-");
+    arr = string_ssplit(s, ":-");
 
-    assert(strcmp(str_cstr(arr[0]), "") == 0);
-    assert(strcmp(str_cstr(arr[1]), "abc") == 0);
-    assert(strcmp(str_cstr(arr[2]), "") == 0);
+    assert(strcmp(string_cstr(arr[0]), "") == 0);
+    assert(strcmp(string_cstr(arr[1]), "abc") == 0);
+    assert(strcmp(string_cstr(arr[2]), "") == 0);
     assert(arr[3] == NULL);
 
-    str_array_del(arr);
-    str_del(s);
+    string_array_del(arr);
+    string_delete(s);
 }
 
 static void test_array_clone_empty_array(void)
 {
-    str_t **arr1, **arr2;
+    string_t **arr1, **arr2;
 
-    arr1 = str_array_new(1);
+    arr1 = string_array_new(1);
 
-    arr2 = str_array_clone(arr1);
+    arr2 = string_array_clone(arr1);
 
     assert(arr2 != NULL);
     assert(arr2 != arr1);
     assert(arr2[0] == NULL);
 
-    str_array_del(arr1);
-    str_array_del(arr2);
+    string_array_del(arr1);
+    string_array_del(arr2);
 }
 
 static void test_case_conversion_no_alpha(void)
 {
-    str_t *s, *lower, *upper;
+    string_t *s;
 
-    s = str_new("1234!@#$");
+    s = string_new("1234!@#$");
 
-    lower = str_tolower(s);
-    upper = str_toupper(s);
+    string_tolower(s);
 
-    assert(strcmp(str_cstr(lower), "1234!@#$") == 0);
-    assert(strcmp(str_cstr(upper), "1234!@#$") == 0);
+    assert(strcmp(string_cstr(s), "1234!@#$") == 0);
 
-    str_del(lower);
-    str_del(upper);
-    str_del(s);
+    string_toupper(s);
+
+    assert(strcmp(string_cstr(s), "1234!@#$") == 0);
+
+    string_delete(s);
 }
 
-
-/*****************************************************************************
+/****************************************************************************
  * Main
  *****************************************************************************/
 
-void test_str (void)
+void test_string(void)
 {
-    void (*str_test_fns[])(void) = {
-        test_str_new_del,
-        test_str_clone,
-        test_str_array_new_del,
-        test_str_array_clone,
-        test_str_length,
-        test_str_tolower,
-        test_str_toupper,
-        test_str_compare,
-        test_str_contains,
-        test_str_substr,
-        test_str_join,
-        test_str_split,
-        test_str_ssplit,
+    void (*string_test_fns[])(void) = {
+        test_string_new_delete,
+        test_string_newn,
+        test_string_newb,
+        test_string_init,
+        test_string_initn,
+        test_string_initb,
+        test_string_set,
+        test_string_setn,
+        test_string_setb,
+        test_string_clone,
+        test_string_swap,
+        test_string_reserve,
+        test_string_array_new_delete,
+        test_string_array_clone,
+        test_string_length,
+        test_string_capacity,
+        test_string_empty,
+        test_string_data,
+        test_string_at,
+        test_string_tolower,
+        test_string_toupper,
+        test_string_compare,
+        test_compare_prefix_lengths,
+        test_compare_case_insensitive_partial,
+        test_compare_negative_n,
+        test_compare_empty_vs_nonempty,
+        test_string_starts_with,
+        test_string_ends_with,
+        test_string_contains,
+        test_string_find,
+        test_contains_empty_substring,
+        test_contains_overlapping_pattern,
+        test_contains_at_end_boundary,
+        test_string_rfind,
+        test_string_substr,
+        test_substr_full_string,
+        test_substr_last_character,
+        test_string_append,
+        test_string_appendn,
+        test_string_insert,
+        test_string_insertn,
         test_replace_null_arguments,
-        test_replace_empty_string_singleton,
-        test_replace_n_zero_returns_clone,
+        test_replace_n_zero_no_change,
         test_replace_substring_not_found,
         test_replace_replace_single_occurrence,
         test_replace_replace_multiple_occurrences,
@@ -1315,39 +1328,30 @@ void test_str (void)
         test_replace_empty_substring_insert_prefix_once,
         test_replace_empty_substring_insert_multiple_times,
         test_replace_empty_substring_with_negative_n,
-        test_replace_empty_substring_n_exceeds_length_plus_one,
         test_replace_overlapping_substrings,
-        test_replace_empty_substring_zero_length_input,
-        test_replace_exact_occurrence_count,
         test_replace_occurrence_at_end,
         test_replace_occurrence_at_beginning,
         test_replace_entire_string,
         test_replace_with_same_string,
         test_replace_partial_overlap_not_revisited,
-        test_replace_empty_substring_two_insertions,
-        test_replace_empty_substring_middle_behavior,
         test_replace_remove_entire_contents,
         test_replace_separator_style_pattern,
-        test_replace_no_mutation_of_original,
-        test_compare_prefix_lengths,
-        test_compare_case_insensitive_partial,
-        test_compare_negative_n,
-        test_compare_empty_strings,
-        test_compare_empty_vs_nonempty,
-        test_contains_empty_substring,
-        test_contains_overlapping_pattern,
-        test_contains_at_end_boundary,
-        test_substr_full_string,
-        test_substr_empty_from_end,
-        test_substr_last_character,
+        test_remove_prefix,
+        test_remove_suffix,
+        test_trim,
+        test_trim_leading_ws,
+        test_trim_trailing_ws,
+        test_string_join,
         test_join_single_element,
         test_join_empty_separator,
         test_join_with_empty_strings,
+        test_string_split,
         test_split_separator_not_present,
         test_split_separator_at_beginning,
         test_split_separator_at_end,
         test_split_consecutive_separators,
         test_split_entire_string_as_separator,
+        test_string_ssplit,
         test_ssplit_separator_not_present,
         test_ssplit_consecutive_delimiters,
         test_ssplit_delimiter_at_edges,
@@ -1355,11 +1359,12 @@ void test_str (void)
         test_case_conversion_no_alpha,
         NULL
     };
+
     int count;
 
-    for (count = 0; str_test_fns[count] != NULL; count++) {
-        str_test_fns[count]();
+    for (count = 0; string_test_fns[count] != NULL; count++) {
+        string_test_fns[count]();
     }
 
-    printf("All %d str_t tests passed\n", count);
+    printf("All %d string_t tests passed\n", count);
 }

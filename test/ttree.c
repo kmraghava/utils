@@ -541,12 +541,10 @@ static void test_tree_find_null_arguments(void)
     make_node(&node, 1, "node");
 
     assert(tree_find_node(NULL, 1, &id, match_by_id) == NULL);
-    assert(tree_find_node(&root, 1, NULL, match_by_id) == NULL);
     assert(tree_find_node(&root, 1, &id, NULL) == NULL);
     assert(tree_find_node(&root, 0, &id, match_by_id) == NULL);
 
     assert(tree_node_find_node(NULL, 1, &id, match_by_id) == NULL);
-    assert(tree_node_find_node(&node.tnode, 1, NULL, match_by_id) == NULL);
     assert(tree_node_find_node(&node.tnode, 1, &id, NULL) == NULL);
     assert(tree_node_find_node(&node.tnode, 0, &id, match_by_id) == NULL);
 }

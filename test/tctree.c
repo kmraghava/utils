@@ -204,5 +204,5 @@ void test_ctree()
     test_find();
     test_find_all();
 
-    printf("All tests passed.\n");
+    printf("All ctree tests passed.\n");
 }
