@@ -139,6 +139,20 @@ extern string_t* string_delete (string_t *str_p);
 
 /*****************************************************************************
  *
+ *  NAME        : string_reset
+ *
+ *  DESCRIPTION : Resets the given string. Frees the resources allocated for
+                  this string; but doesn't free the string itself.
+ *
+ *  PARAMS      : str_p - String
+ *
+ *  RETURNS     : Nothing
+ *
+ *****************************************************************************/
+extern void string_reset (string_t *str_p);
+
+/*****************************************************************************
+ *
  *  NAME        : string_clone
  *
  *  DESCRIPTION : Clones the given string
@@ -197,6 +211,8 @@ extern       char* string_data (string_t *str_p);
 /*****************************************************************************
  *
  *  NAME        : string_at
+                  string_first
+                  string_last
  *
  *  DESCRIPTION : Get the character at the given position in the given string
  *
@@ -207,6 +223,8 @@ extern       char* string_data (string_t *str_p);
  *
  *****************************************************************************/
 extern char string_at (string_t *str_p, long pos);
+#define string_first(str_p)  string_at(str_p, 0)
+#define string_last(str_p)  string_at(str_p, string_length(str_p) - 1)
 
 /*****************************************************************************
  *
@@ -247,6 +265,20 @@ extern long string_capacity (string_t *str_p);
  *
  *****************************************************************************/
 extern bool string_empty (string_t *str_p);
+
+/*****************************************************************************
+ *
+ *  NAME        : string_clear
+ *
+ *  DESCRIPTION : Clears the string
+ *
+ *  PARAMS      : str_p - The string
+ *
+ *  RETURNS     : true if the string was cleared
+ *                false otherwise
+ *
+ *****************************************************************************/
+#define string_clear(str_p) string_set(str_p, "")
 
 /*****************************************************************************
  *
@@ -404,9 +436,11 @@ extern string_t* string_substr (string_t *str_p, long pos, long n);
 /*****************************************************************************
  *
  *  NAME        : string_append
+                  string_appendc
  *                string_appendn
  *
- *  DESCRIPTION : Appends the given string to the end of the given string
+ *  DESCRIPTION : Appends the given string or character to the end of the
+                  given string
  *
  *  PARAMS      : str_p - The string to append to
  *                s     - The string to append
@@ -417,15 +451,17 @@ extern string_t* string_substr (string_t *str_p, long pos, long n);
  *
  *****************************************************************************/
 #define string_append(str_p, s)  string_appendn(str_p, s, -1)
+#define string_appendc(str_p, ch) string_appendn(str_p, &ch, 1)
 extern bool string_appendn (string_t *str_p, const char *s, long n);
 
 /*****************************************************************************
  *
  *  NAME        : string_insert
+ *                string_insertc
  *                string_insertn
  *
- *  DESCRIPTION : Inserts the given string at the specified position in the
- *                given string
+ *  DESCRIPTION : Inserts the given string or character at the specified
+ *                position in the given string
  *
  *  PARAMS      : str_p - The string to insert into
  *                pos   - Insert position
@@ -437,6 +473,7 @@ extern bool string_appendn (string_t *str_p, const char *s, long n);
  *
  *****************************************************************************/
 #define string_insert(str_p, pos, s)  string_insertn(str_p, pos, s, -1)
+#define string_insertc(str_p, pos, ch) string_insertn(str_p, pos, &ch, 1)
 extern bool string_insertn (string_t *str_p, long pos, const char *s, long n);
 
 /*****************************************************************************
@@ -456,6 +493,22 @@ extern bool string_insertn (string_t *str_p, long pos, const char *s, long n);
  *
  *****************************************************************************/
 extern bool string_replace (string_t *str_p, const char *ss_p, const char *rs_p, long n);
+
+/*****************************************************************************
+ *
+ *  NAME        : string_remove
+ *
+ *  DESCRIPTION : Removes n characters from the specified position in the
+ *                given string
+ *
+ *  PARAMS      : str_p - The string
+ *                pos   - Position from which to remove characters
+ *                n     - Number of characters to remove
+ *
+ *  RETURNS     : Nothing
+ *
+ *****************************************************************************/
+extern void string_remove (string_t *str_p, long pos, long n);
 
 /*****************************************************************************
  *

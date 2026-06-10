@@ -275,6 +275,32 @@ string_t* string_delete (string_t *str_p)
 
 /*****************************************************************************
  *
+ *  NAME        : string_reset
+ *
+ *  DESCRIPTION : Resets the given string. Frees the resources allocated for
+                  this string; but doesn't free the string itself.
+ *
+ *  PARAMS      : str_p - String
+ *
+ *  RETURNS     : Nothing
+ *
+ *****************************************************************************/
+void string_reset (string_t *str_p)
+{
+    if (str_p)
+    {
+        if (str_p->capacity > 0)
+        {
+            free(str_p->s);
+            str_p->s = NULL;
+        }
+        str_p->capacity = 0;
+        str_p->length = 0;
+    }
+}
+
+/*****************************************************************************
+ *
  *  NAME        : string_clone
  *
  *  DESCRIPTION : Clones the given string
@@ -1000,6 +1026,35 @@ bool string_replace (string_t *str_p, const char *ss_p, const char *rs_p, long n
     }
 
     return true;
+}
+
+/*****************************************************************************
+ *
+ *  NAME        : string_remove
+ *
+ *  DESCRIPTION : Removes n characters from the specified position in the
+ *                given string
+ *
+ *  PARAMS      : str_p - The string
+ *                pos   - Position from which to remove characters
+ *                n     - Number of characters to remove
+ *
+ *  RETURNS     : Nothing
+ *
+ *****************************************************************************/
+void string_remove (string_t *str_p, long pos, long n)
+{
+    if (!str_p || !str_p->s || str_p->length == 0)
+        return;
+
+    if (pos < 0 || pos > str_p->length)
+        return;
+
+    if (n < 0 || pos + n > str_p->length)
+        return;
+
+    memmove(str_p->s + pos, str_p->s + pos + n, str_p->length - (pos + n) + 1);
+    str_p->length -= n;
 }
 
 /*****************************************************************************
