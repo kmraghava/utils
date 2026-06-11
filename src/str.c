@@ -472,6 +472,19 @@ bool string_empty (string_t *str_p)
 {
     return str_p ? str_p->length == 0 : true;
 }
+bool string_blank (string_t *str_p)
+{
+    if (!str_p || !str_p->s)
+        return true;
+
+    for (long i = 0; i < str_p->length; i++)
+    {
+        if (str_p->s[i] != ' ' && str_p->s[i] != '\t')
+            return false;
+    }
+
+    return true;
+}
 
 /*****************************************************************************
  *
@@ -662,6 +675,32 @@ bool string_starts_with (string_t *str_p, const char *prefix_p)
         return true;
 
     return 0 == strncmp(str_p->s + (str_p->length - suffix_len), suffix_p, suffix_len);
+}
+
+/*****************************************************************************
+ *
+ *  NAME        : string_span
+ *
+ *  DESCRIPTION : Calculate the length of the initial segment of the given
+ *                string str_p which consists entirely of characters in the
+ *                given accept string
+ *
+ *  PARAMS      : str_p    - The string
+ *                accept_p - The string containing acceptable characters
+ *
+ *  RETURNS     : Length of the initial segment consisting of acceptable
+ *                characters
+ *
+ *****************************************************************************/
+long string_span (string_t *str_p, const char *accept_p)
+{
+    if (!str_p || !str_p->s)
+        return 0;
+
+    if (!accept_p)
+        return 0;
+
+    return strspn(str_p->s, accept_p);
 }
 
 /*****************************************************************************
@@ -1110,22 +1149,33 @@ void string_remove_suffix (string_t *str_p, long n)
  *
  *  PARAMS      : str_p - The string
  *
- *  RETURNS     : Nothing
+ *  RETURNS     : Number of characters removed
  *
  *****************************************************************************/
-void string_trim (string_t *str_p)
+long string_trim (string_t *str_p)
 {
-    string_trim_leading_ws(str_p);
-    string_trim_trailing_ws(str_p);
+    long  count;
+
+    count  = string_trim_leading_ws(str_p);
+    count += string_trim_trailing_ws(str_p);
+
+    return count;
 }
-void string_trim_leading_ws (string_t *str_p)
+long string_trim_leading_ws (string_t *str_p)
 {
     if (!str_p || !str_p->s || str_p->length == 0)
-        return;
+        return 0;
 
     long  i = 0;
+
     while (   i < str_p->length
-           && (str_p->s[i] == ' ' || str_p->s[i] == '\t' || str_p->s[i] == '\n')
+           && (   str_p->s[i] == ' '    // space
+               || str_p->s[i] == '\t'   // horizontal tab
+               || str_p->s[i] == '\v'   // vertical tab
+               || str_p->s[i] == '\f'   // form feed
+               || str_p->s[i] == '\r'   // carriage return
+               || str_p->s[i] == '\n'   // newline
+              )
           )
     {
         i++;
@@ -1135,21 +1185,35 @@ void string_trim_leading_ws (string_t *str_p)
         memmove(str_p->s, str_p->s + i, str_p->length - i + 1);
         str_p->length -= i;
     }
+
+    return i;
 }
-void string_trim_trailing_ws (string_t *str_p)
+long string_trim_trailing_ws (string_t *str_p)
 {
     if (!str_p || !str_p->s || str_p->length == 0)
-        return;
+        return 0;
 
-    long  i = str_p->length - 1;
-    while (   str_p->length > 0
-           && (str_p->s[i] == ' ' || str_p->s[i] == '\t' || str_p->s[i] == '\n')
+    long  i = 0;
+
+    while (   i < str_p->length
+           && (   str_p->s[str_p->length - 1 - i] == ' '    // space
+               || str_p->s[str_p->length - 1 - i] == '\t'   // horizontal tab
+               || str_p->s[str_p->length - 1 - i] == '\v'   // vertical tab
+               || str_p->s[str_p->length - 1 - i] == '\f'   // form feed
+               || str_p->s[str_p->length - 1 - i] == '\r'   // carriage return
+               || str_p->s[str_p->length - 1 - i] == '\n'   // newline
+              )
           )
     {
-        str_p->length--;
-        i--;
+        i++;
     }
-    str_p->s[str_p->length] = '\0';
+    if (i > 0)
+    {
+        str_p->length -= i;
+        str_p->s[str_p->length] = '\0';
+    }
+
+    return i;
 }
 
 /*****************************************************************************

@@ -49,7 +49,6 @@ typedef struct string_s
 } string_t;
 
 
-
 /*****************************************************************************
  * Global Variables
  *****************************************************************************/
@@ -255,8 +254,9 @@ extern long string_capacity (string_t *str_p);
 /*****************************************************************************
  *
  *  NAME        : string_empty
+ *                string_blank
  *
- *  DESCRIPTION : Check if the given string is empty
+ *  DESCRIPTION : Check if the given string is empty / blank
  *
  *  PARAMS      : str_p - The string
  *
@@ -265,6 +265,7 @@ extern long string_capacity (string_t *str_p);
  *
  *****************************************************************************/
 extern bool string_empty (string_t *str_p);
+extern bool string_blank (string_t *str_p);
 
 /*****************************************************************************
  *
@@ -385,6 +386,23 @@ extern bool string_ends_with (string_t *str_p, const char *suffix_p);
  *
  *****************************************************************************/
 #define string_contains(str_p, substr_p)  (-1 != string_find(str_p, 0, substr_p))
+
+/*****************************************************************************
+ *
+ *  NAME        : string_span
+ *
+ *  DESCRIPTION : Calculate the length of the initial segment of the given
+ *                string str_p which consists entirely of characters in the
+ *                given accept string
+ *
+ *  PARAMS      : str_p    - The string
+ *                accept_p - The string containing acceptable characters
+ *
+ *  RETURNS     : Length of the initial segment consisting of acceptable
+ *                characters
+ *
+ *****************************************************************************/
+extern long string_span (string_t *str_p, const char *accept_p);
 
 /*****************************************************************************
  *
@@ -537,12 +555,12 @@ extern void string_remove_suffix (string_t *str_p, long n);
  *
  *  PARAMS      : str_p - The string
  *
- *  RETURNS     : Nothing
+ *  RETURNS     : Number of characters removed
  *
  *****************************************************************************/
-extern void string_trim             (string_t *str_p);
-extern void string_trim_leading_ws  (string_t *str_p);
-extern void string_trim_trailing_ws (string_t *str_p);
+extern long string_trim             (string_t *str_p);
+extern long string_trim_leading_ws  (string_t *str_p);
+extern long string_trim_trailing_ws (string_t *str_p);
 
 /*****************************************************************************
  *
