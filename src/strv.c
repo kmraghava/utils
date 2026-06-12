@@ -1,6 +1,6 @@
 /*****************************************************************************
  *
- * FILE NAME     : stringv.c
+ * FILE NAME     : strv.c
  * MODULE        : utils
  * AUTHOR        : KM Raghava
  * CREATION DATE : May 26, 2026
@@ -48,6 +48,7 @@
    Local Function Prototypes
 *****************************************************************************/
 static char char_tolower (char ch);
+static char char_toupper (char ch);
 
 
 /*****************************************************************************
@@ -61,10 +62,50 @@ static char char_tolower (char ch)
     return ch;
 }
 
+static char char_toupper (char ch)
+{
+    if (ch >= 'a' && ch <= 'z')
+        return ch - 'a' + 'A';
+        
+    return ch;
+}
+
 
 /*****************************************************************************
    Global Functions
 *****************************************************************************/
+/*****************************************************************************
+ *
+ *  NAME        : empty_stringv
+ *                true_stringv
+ *                false_stringv
+ *
+ *  DESCRIPTION : Useful strings
+ *
+ *  PARAMS      : void
+ *
+ *  RETURNS     : Returns string.
+ *
+ *****************************************************************************/
+stringv_t* empty_stringv (void)
+{
+    static stringv_t  empty_str = {"", 0L};
+
+    return &empty_str;
+}
+stringv_t* true_stringv  (void)
+{
+    static stringv_t  true_str = {"true", 4L};
+
+    return &true_str;
+}
+stringv_t* false_stringv (void)
+{
+    static stringv_t  false_str = {"false", 5L};
+
+    return &false_str;
+}
+
 /*****************************************************************************
  *
  *  NAME        : stringv_setb
@@ -161,22 +202,6 @@ char* stringv_copy (stringv_t *str_p, char *buffer_p, long buffer_size)
 
 /*****************************************************************************
  *
- *  NAME        : stringv_length
- *
- *  DESCRIPTION : Get length of the given string
- *
- *  PARAMS      : str_p - The string
- *
- *  RETURNS     : Length of given string
- *
- *****************************************************************************/
-long stringv_length (stringv_t *str_p)
-{
-    return str_p? str_p->slen : -1;
-}
-
-/*****************************************************************************
- *
  *  NAME        : stringv_at
  *
  *  DESCRIPTION : Get the character at the given position in the given string
@@ -200,6 +225,96 @@ char stringv_at (stringv_t *str_p, long pos)
 
 /*****************************************************************************
  *
+ *  NAME        : stringv_length
+ *
+ *  DESCRIPTION : Get length of the given string
+ *
+ *  PARAMS      : str_p - The string
+ *
+ *  RETURNS     : Length of given string
+ *
+ *****************************************************************************/
+long stringv_length (stringv_t *str_p)
+{
+    return str_p? str_p->slen : -1;
+}
+
+/*****************************************************************************
+ *
+ *  NAME        : stringv_empty
+ *
+ *  DESCRIPTION : Check if the given string is empty
+ *
+ *  PARAMS      : str_p - The string
+ *
+ *  RETURNS     : true if the string is empty
+ *                false otherwise
+ *
+ *****************************************************************************/
+bool stringv_empty (stringv_t *str_p)
+{
+    return str_p ? str_p->slen == 0 : true;
+}
+bool stringv_blank (stringv_t *str_p)
+{
+    if (!str_p || !str_p->s)
+        return true;
+
+    for (long i = 0; i < str_p->slen; i++)
+    {
+        if (str_p->s[i] != ' ' && str_p->s[i] != '\t')
+            return false;
+    }
+
+    return true;
+}
+
+/*****************************************************************************
+ *
+ *  NAME        : stringv_tolower
+ *
+ *  DESCRIPTION : Convert the given string to lowercase
+ *
+ *  PARAMS      : str_p - The string
+ *
+ *  RETURNS     : Nothing
+ *
+ *  NOTES       : No-Op if inputs were invalid.
+ *
+ *****************************************************************************/
+void stringv_tolower (stringv_t *str_p)
+{
+    if (!str_p || !str_p->s)
+        return;
+
+    for (long i = 0; i < str_p->slen; i++)
+        str_p->s[i] = char_tolower(str_p->s[i]);
+}
+
+/*****************************************************************************
+ *
+ *  NAME        : stringv_toupper
+ *
+ *  DESCRIPTION : Convert the given string to uppercase
+ *
+ *  PARAMS      : str_p - The string
+ *
+ *  RETURNS     : Nothing
+ *
+ *  NOTES       : No-Op if inputs were invalid.
+ *
+ *****************************************************************************/
+void stringv_toupper (stringv_t *str_p)
+{
+    if (!str_p || !str_p->s)
+        return;
+
+    for (long i = 0; i < str_p->slen; i++)
+        str_p->s[i] = char_toupper(str_p->s[i]);
+}
+
+/*****************************************************************************
+ *
  *  NAME        : stringv_compare
  *
  *  DESCRIPTION : Compares two strings
@@ -215,13 +330,13 @@ char stringv_at (stringv_t *str_p, long pos)
  *                        and str2_p  = NULL
  *                  0  if     str1_p  = NULL
  *                        and str2_p  = NULL
- *                 -1  if     stringv_length(str1_p) < stringv_length(str1_p)
- *                 +1  if     stringv_length(str1_p) > stringv_length(str1_p)
- *                < 0  if     stringv_length(str1_p) = stringv_length(str1_p)
+ *                 -1  if     stringv_length(str1_p) < stringv_length(str2_p)
+ *                 +1  if     stringv_length(str1_p) > stringv_length(str2_p)
+ *                < 0  if     stringv_length(str1_p) = stringv_length(str2_p)
  *                        and ASCII(str1_p) < ASCII(str2_p)
- *                > 0  if     stringv_length(str1_p) = stringv_length(str1_p)
+ *                > 0  if     stringv_length(str1_p) = stringv_length(str2_p)
  *                        and ASCII(str1_p) > ASCII(str2_p)
- *                = 0  if     stringv_length(str1_p) = stringv_length(str1_p)
+ *                = 0  if     stringv_length(str1_p) = stringv_length(str2_p)
  *                        and ASCII(str1_p) = ASCII(str2_p)
  *
  * NOTES        : Comparison is done first based on length and then based on
@@ -345,6 +460,32 @@ bool stringv_starts_with (stringv_t *str_p, const char *prefix_p)
         return true;
 
     return 0 == strncmp(str_p->s + (str_p->slen - suffix_len), suffix_p, suffix_len);
+}
+
+/*****************************************************************************
+ *
+ *  NAME        : stringv_span
+ *
+ *  DESCRIPTION : Calculate the length of the initial segment of the given
+ *                string str_p which consists entirely of characters in the
+ *                given accept string
+ *
+ *  PARAMS      : str_p    - The string
+ *                accept_p - The string containing acceptable characters
+ *
+ *  RETURNS     : Length of the initial segment consisting of acceptable
+ *                characters
+ *
+ *****************************************************************************/
+long stringv_span (stringv_t *str_p, const char *accept_p)
+{
+    if (!str_p || !str_p->s)
+        return 0;
+
+    if (!accept_p)
+        return 0;
+
+    return strspn(str_p->s, accept_p);
 }
 
 /*****************************************************************************

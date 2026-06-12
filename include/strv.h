@@ -64,6 +64,23 @@ typedef struct stringv
  *****************************************************************************/
 /*****************************************************************************
  *
+ *  NAME        : empty_stringv
+ *                true_stringv
+ *                false_stringv
+ *
+ *  DESCRIPTION : Useful strings
+ *
+ *  PARAMS      : void
+ *
+ *  RETURNS     : Returns string.
+ *
+ *****************************************************************************/
+extern stringv_t* empty_stringv (void);
+extern stringv_t* true_stringv  (void);
+extern stringv_t* false_stringv (void);
+
+/*****************************************************************************
+ *
  *  NAME        : stringv_set
  *                stringv_setn
  *                stringv_setb
@@ -98,8 +115,7 @@ extern void stringv_setb (stringv_t *str_p, char *s, long pos, long n);
  *                NULL if str_p was invalid
  *
  *  NOTES       : stringv_t may be pointing to a character array that has more
- *                that stringv_t.slen characters. So, use this function only if
- *                stringv operations carefully.
+ *                that stringv_t.slen characters. So, use this function carefully.
  *                If you are unsure, best way is to use stringv_copy to copy
  *                the string out to a buffer.
  *
@@ -121,6 +137,21 @@ extern char* stringv_get (stringv_t *str_p);
  *****************************************************************************/
 extern char* stringv_copy (stringv_t *str_p, char *buffer_p, long buffer_size);
 
+/*****************************************************************************
+ *
+ *  NAME        : stringv_at
+ *
+ *  DESCRIPTION : Get the character at the given position in the given string
+ *
+ *  PARAMS      : str_p - The string
+ *                pos   - Position in the string
+ *
+ *  RETURNS     : Character at the given position
+ *
+ *****************************************************************************/
+extern char stringv_at (stringv_t *str_p, long pos);
+#define stringv_first(str_p)  stringv_at(str_p, 0)
+#define stringv_last(str_p)  stringv_at(str_p, stringv_length(str_p) - 1)
 
 /*****************************************************************************
  *
@@ -137,17 +168,59 @@ extern long stringv_length (stringv_t *str_p);
 
 /*****************************************************************************
  *
- *  NAME        : stringv_at
+ *  NAME        : stringv_empty
+ *                stringv_blank
  *
- *  DESCRIPTION : Get the character at the given position in the given string
+ *  DESCRIPTION : Check if the given string is empty / blank
  *
  *  PARAMS      : str_p - The string
- *                pos   - Position in the string
  *
- *  RETURNS     : Character at the given position
+ *  RETURNS     : true if the string is empty
+ *                false otherwise
  *
  *****************************************************************************/
-extern char stringv_at (stringv_t *str_p, long pos);
+extern bool stringv_empty (stringv_t *str_p);
+extern bool stringv_blank (stringv_t *str_p);
+
+/*****************************************************************************
+ *
+ *  NAME        : stringv_clear
+ *
+ *  DESCRIPTION : Clears the string
+ *
+ *  PARAMS      : str_p - The string
+ *
+ *  RETURNS     : true if the string was cleared
+ *                false otherwise
+ *
+ *****************************************************************************/
+#define stringv_clear(str_p) stringv_set(str_p, "")
+
+/*****************************************************************************
+ *
+ *  NAME        : stringv_tolower
+ *
+ *  DESCRIPTION : Convert the given string to lowercase
+ *
+ *  PARAMS      : str_p - The string
+ *
+ *  RETURNS     : string in lower case
+ *
+ *****************************************************************************/
+extern void stringv_tolower (stringv_t *str_p);
+
+/*****************************************************************************
+ *
+ *  NAME        : stringv_toupper
+ *
+ *  DESCRIPTION : Convert the given string to uppercase
+ *
+ *  PARAMS      : str_p - The string
+ *
+ *  RETURNS     : string in upper case
+ *
+ *****************************************************************************/
+extern void stringv_toupper (stringv_t *str_p);
 
 /*****************************************************************************
  *
@@ -166,14 +239,14 @@ extern char stringv_at (stringv_t *str_p, long pos);
  *                        and str2_p  = NULL
  *                  0  if     str1_p  = NULL
  *                        and str2_p  = NULL
- *                 +1  if     stringv_length(str1_p) > stringv_length(str1_p)
- *                 -1  if     stringv_length(str1_p) < stringv_length(str1_p)
- *                 +1  if     stringv_length(str1_p) > stringv_length(str1_p)
- *                < 0  if     stringv_length(str1_p) = stringv_length(str1_p)
+ *                 +1  if     stringv_length(str1_p) > stringv_length(str2_p)
+ *                 -1  if     stringv_length(str1_p) < stringv_length(str2_p)
+ *                 +1  if     stringv_length(str1_p) > stringv_length(str2_p)
+ *                < 0  if     stringv_length(str1_p) = stringv_length(str2_p)
  *                        and ASCII(str1_p) < ASCII(str2_p)
- *                > 0  if     stringv_length(str1_p) = stringv_length(str1_p)
+ *                > 0  if     stringv_length(str1_p) = stringv_length(str2_p)
  *                        and ASCII(str1_p) > ASCII(str2_p)
- *                = 0  if     stringv_length(str1_p) = stringv_length(str1_p)
+ *                = 0  if     stringv_length(str1_p) = stringv_length(str2_p)
  *                        and ASCII(str1_p) = ASCII(str2_p)
  *
  * NOTES        : Comparison is done first based on length and then based on
@@ -231,6 +304,23 @@ extern bool stringv_ends_with (stringv_t *str_p, const char *prefix_p);
  *
  *****************************************************************************/
 #define stringv_contains(str_p, substr_p)  (-1 != stringv_find(str_p, 0, substr_p))
+
+/*****************************************************************************
+ *
+ *  NAME        : stringv_span
+ *
+ *  DESCRIPTION : Calculate the length of the initial segment of the given
+ *                string str_p which consists entirely of characters in the
+ *                given accept string
+ *
+ *  PARAMS      : str_p    - The string
+ *                accept_p - The string containing acceptable characters
+ *
+ *  RETURNS     : Length of the initial segment consisting of acceptable
+ *                characters
+ *
+ *****************************************************************************/
+extern long stringv_span (stringv_t *str_p, const char *accept_p);
 
 /*****************************************************************************
  *

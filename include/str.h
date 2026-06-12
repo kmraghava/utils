@@ -62,6 +62,23 @@ typedef struct string_s
  *****************************************************************************/
 /*****************************************************************************
  *
+ *  NAME        : empty_string
+ *                true_string
+ *                false_string
+ *
+ *  DESCRIPTION : Useful strings
+ *
+ *  PARAMS      : void
+ *
+ *  RETURNS     : Returns string.
+ *
+ *****************************************************************************/
+extern string_t* empty_string (void);
+extern string_t* true_string  (void);
+extern string_t* false_string (void);
+
+/*****************************************************************************
+ *
  *  NAME        : string_new
  *                string_newn
  *                string_newb
@@ -419,6 +436,7 @@ extern long string_span (string_t *str_p, const char *accept_p);
  *
  *****************************************************************************/
 extern long string_find (string_t *str_p, long pos, const char *substr_p);
+#define string_find_first(str_p, substr_p)  string_find(str_p, 0, substr_p)
 
 /*****************************************************************************
  *
@@ -435,6 +453,7 @@ extern long string_find (string_t *str_p, long pos, const char *substr_p);
  *
  *****************************************************************************/
 extern long string_rfind (string_t *str_p, long last_pos, const char *substr_p);
+#define string_find_last(str_p, substr_p)  string_rfind(str_p, string_length(str_p) - 1, substr_p)
 
 /*****************************************************************************
  *
@@ -661,6 +680,19 @@ extern string_t** string_array_del (string_t **sarray_p);
  *
  *****************************************************************************/
 extern string_t** string_array_clone (string_t **sarray_p);
+
+/*****************************************************************************
+ *
+ *  NAME        : string_array_count
+ *
+ *  DESCRIPTION : Counts the number of strings in the given array
+ *
+ *  PARAMS      : sarray_pp - Array of strings
+ *
+ *  RETURNS     : Number of strings in the array.
+ *
+ *****************************************************************************/
+extern long string_array_count (string_t **sarray_pp);
 
 
 #if defined(__cplusplus)

@@ -103,6 +103,38 @@ static char char_toupper (char ch)
 *****************************************************************************/
 /*****************************************************************************
  *
+ *  NAME        : empty_string
+ *                true_string
+ *                false_string
+ *
+ *  DESCRIPTION : Useful strings
+ *
+ *  PARAMS      : void
+ *
+ *  RETURNS     : Returns string.
+ *
+ *****************************************************************************/
+string_t* empty_string (void)
+{
+    static string_t  empty_str = {0L, 0L, ""};
+
+    return &empty_str;
+}
+string_t* true_string  (void)
+{
+    static string_t  true_str = {0L, 4L, "true"};
+
+    return &true_str;
+}
+string_t* false_string (void)
+{
+    static string_t  false_str = {0L, 5L, "false"};
+
+    return &false_str;
+}
+
+/*****************************************************************************
+ *
  *  NAME        : string_newb
  *
  *  DESCRIPTION : Create a new string
@@ -263,7 +295,12 @@ bool string_setb (string_t *str_p, const char *s, long pos, long n)
  *****************************************************************************/
 string_t* string_delete (string_t *str_p)
 {
-    if (str_p)
+    if (   str_p
+
+        && str_p != empty_string()
+        && str_p != true_string()
+        && str_p != false_string()
+       )
     {
         if (str_p->capacity > 0)
             free(str_p->s);
@@ -1238,7 +1275,7 @@ string_t* string_join (string_t **sarray_p, const char *sep_p)
        )
     {
         if (sarray_p[0] == NULL)
-            joined_str_p = string_newb("", 0, 0);
+            joined_str_p = empty_string();
         else
         {
             long  sep_len = strlen(sep_p),
@@ -1254,7 +1291,7 @@ string_t* string_join (string_t **sarray_p, const char *sep_p)
             total_slen += (sep_len * (count - 1));
 
             if (total_slen == 0)
-                joined_str_p = string_newb("", 0, 0);
+                joined_str_p = empty_string();
             else
             {
                 joined_str_p = string_newb(NULL, 0, 0);
@@ -1554,6 +1591,30 @@ string_t** string_array_del (string_t **sarray_p)
     }
 
     return NULL;
+}
+
+/*****************************************************************************
+ *
+ *  NAME        : string_array_count
+ *
+ *  DESCRIPTION : Counts the number of strings in the given array
+ *
+ *  PARAMS      : sarray_pp - Array of strings
+ *
+ *  RETURNS     : Number of strings in the array.
+ *
+ *****************************************************************************/
+long string_array_count (string_t **sarray_pp)
+{
+    long  count = 0;
+
+    if (sarray_pp)
+    {
+        while (sarray_pp[count])
+            count++;
+    }
+
+    return count;
 }
 
 /*****************************************************************************
