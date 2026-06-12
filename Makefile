@@ -36,6 +36,7 @@ sources := $(src_dir)/clist.c \
 		   $(src_dir)/tree.c \
 		   $(src_dir)/str.c \
 		   $(src_dir)/strv.c \
+		   $(src_dir)/xmlnode.c \
 		   \
 
 # Object files
