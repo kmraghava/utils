@@ -10,7 +10,7 @@ extern void test_mac_addr (void);
 extern void test_ctree (void);
 extern void test_string (void);
 extern void test_tree (void);
-extern void test_stringv (void);
+extern void test_strbuf (void);
 
 int main ()
 {
@@ -31,7 +31,7 @@ int main ()
     printf("\n");
     test_tree();
     printf("\n");
-    test_stringv();
+    test_strbuf();
     printf("\n");
 
     return 0;

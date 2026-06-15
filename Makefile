@@ -35,8 +35,7 @@ sources := $(src_dir)/clist.c \
 		   $(src_dir)/mac_addr.c \
 		   $(src_dir)/tree.c \
 		   $(src_dir)/str.c \
-		   $(src_dir)/strv.c \
-		   $(src_dir)/xmlnode.c \
+		   $(src_dir)/strbuf.c \
 		   \
 
 # Object files
@@ -90,7 +89,7 @@ test_sources := $(test_src_dir)/tclist.c \
                 $(test_src_dir)/tmac_addr.c \
                 $(test_src_dir)/ttree.c \
                 $(test_src_dir)/tstr.c \
-                $(test_src_dir)/tstrv.c \
+                $(test_src_dir)/tstrbuf.c \
                 $(test_src_dir)/unit_test.c \
                 \
 

@@ -1,26 +1,18 @@
 /*****************************************************************************
  *
- * FILE NAME     : stringv.h
+ * FILE NAME     : strbuf.h
  * MODULE        : utils
  * AUTHOR        : KM Raghava
  * CREATION DATE : May 26, 2026
  *
  *****************************************************************************
  *
- *  DESCRIPTION : String View.
- *                For operations where string size doesn't change and
- *                therefore doesn't need reallocs.
- *
- *                One could of course use the native APIs in string.h. But
- *                they lack NULL and size checks. Also String View carries
- *                string length along with the string; so when length is
- *                required for string operation, it doesn't need to
- *                calculate.
+ *  DESCRIPTION : String Buffer.
  *
  *****************************************************************************/
 
-#ifndef __stringv_H
-#define __stringv_H
+#ifndef __STRBUF_H
+#define __STRBUF_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,12 +35,12 @@ extern "C" {
 /*****************************************************************************
  * Global Types
  *****************************************************************************/
-typedef struct stringv
+typedef struct strbuf
 {
     char  *s;
     long   slen;
 
-} stringv_t;
+} strbuf_t;
 
 
 /*****************************************************************************
@@ -64,9 +56,9 @@ typedef struct stringv
  *****************************************************************************/
 /*****************************************************************************
  *
- *  NAME        : empty_stringv
- *                true_stringv
- *                false_stringv
+ *  NAME        : empty_strbuf
+ *                true_strbuf
+ *                false_strbuf
  *
  *  DESCRIPTION : Useful strings
  *
@@ -75,20 +67,20 @@ typedef struct stringv
  *  RETURNS     : Returns string.
  *
  *****************************************************************************/
-extern stringv_t* empty_stringv (void);
-extern stringv_t* true_stringv  (void);
-extern stringv_t* false_stringv (void);
+extern strbuf_t* empty_strbuf (void);
+extern strbuf_t* true_strbuf  (void);
+extern strbuf_t* false_strbuf (void);
 
 /*****************************************************************************
  *
- *  NAME        : stringv_set
- *                stringv_setn
- *                stringv_setb
+ *  NAME        : strbuf_set
+ *                strbuf_setn
+ *                strbuf_setb
  *
- *  DESCRIPTION : Initialize the string view from character array starting at
+ *  DESCRIPTION : Initialize the string buffer from character array starting at
  *                pos and n characters
  *
- *  PARAMS      : str_p - The string view
+ *  PARAMS      : str_p - The string buffer
  *                s     - The CString
  *                pos   - Start position in s
  *                n     - Length of CString from pos in s
@@ -99,32 +91,32 @@ extern stringv_t* false_stringv (void);
  *                str_p is initialized only if it is safe to do so.
  *
  *****************************************************************************/
-#define stringv_set(str_p, s)  stringv_setb(str_p, s, 0, -1)
-#define stringv_setn(str_p, s, n)  stringv_setb(str_p, s, 0, n)
-extern void stringv_setb (stringv_t *str_p, char *s, long pos, long n);
+#define strbuf_set(str_p, s)  strbuf_setb(str_p, s, 0, -1)
+#define strbuf_setn(str_p, s, n)  strbuf_setb(str_p, s, 0, n)
+extern void strbuf_setb (strbuf_t *str_p, char *s, long pos, long n);
 
 /*****************************************************************************
  *
- *  NAME        : stringv_get
+ *  NAME        : strbuf_get
  *
- *  DESCRIPTION : Get the character array from the string view
+ *  DESCRIPTION : Get the character array from the string buffer
  *
- *  PARAMS      : str_p - The string view
+ *  PARAMS      : str_p - The string buffer
  *
  *  RETURNS     : Pointer to the character array
  *                NULL if str_p was invalid
  *
- *  NOTES       : stringv_t may be pointing to a character array that has more
- *                that stringv_t.slen characters. So, use this function carefully.
- *                If you are unsure, best way is to use stringv_copy to copy
+ *  NOTES       : strbuf_t may be pointing to a character array that has more
+ *                that strbuf_t.slen characters. So, use this function carefully.
+ *                If you are unsure, best way is to use strbuf_copy to copy
  *                the string out to a buffer.
  *
  *****************************************************************************/
-extern char* stringv_get (stringv_t *str_p);
+extern char* strbuf_get (strbuf_t *str_p);
 
 /*****************************************************************************
  *
- *  NAME        : stringv_copy
+ *  NAME        : strbuf_copy
  *
  *  DESCRIPTION : Copies the string to supplied buffer
  *
@@ -135,11 +127,11 @@ extern char* stringv_get (stringv_t *str_p);
  *  RETURNS     : buffer_p
  *
  *****************************************************************************/
-extern char* stringv_copy (stringv_t *str_p, char *buffer_p, long buffer_size);
+extern char* strbuf_copy (strbuf_t *str_p, char *buffer_p, long buffer_size);
 
 /*****************************************************************************
  *
- *  NAME        : stringv_at
+ *  NAME        : strbuf_at
  *
  *  DESCRIPTION : Get the character at the given position in the given string
  *
@@ -149,13 +141,13 @@ extern char* stringv_copy (stringv_t *str_p, char *buffer_p, long buffer_size);
  *  RETURNS     : Character at the given position
  *
  *****************************************************************************/
-extern char stringv_at (stringv_t *str_p, long pos);
-#define stringv_first(str_p)  stringv_at(str_p, 0)
-#define stringv_last(str_p)  stringv_at(str_p, stringv_length(str_p) - 1)
+extern char strbuf_at (strbuf_t *str_p, long pos);
+#define strbuf_first(str_p)  strbuf_at(str_p, 0)
+#define strbuf_last(str_p)  strbuf_at(str_p, strbuf_length(str_p) - 1)
 
 /*****************************************************************************
  *
- *  NAME        : stringv_length
+ *  NAME        : strbuf_length
  *
  *  DESCRIPTION : Get length of the given string
  *
@@ -164,12 +156,12 @@ extern char stringv_at (stringv_t *str_p, long pos);
  *  RETURNS     : Length of given string
  *
  *****************************************************************************/
-extern long stringv_length (stringv_t *str_p);
+extern long strbuf_length (strbuf_t *str_p);
 
 /*****************************************************************************
  *
- *  NAME        : stringv_empty
- *                stringv_blank
+ *  NAME        : strbuf_empty
+ *                strbuf_blank
  *
  *  DESCRIPTION : Check if the given string is empty / blank
  *
@@ -179,12 +171,12 @@ extern long stringv_length (stringv_t *str_p);
  *                false otherwise
  *
  *****************************************************************************/
-extern bool stringv_empty (stringv_t *str_p);
-extern bool stringv_blank (stringv_t *str_p);
+extern bool strbuf_empty (strbuf_t *str_p);
+extern bool strbuf_blank (strbuf_t *str_p);
 
 /*****************************************************************************
  *
- *  NAME        : stringv_clear
+ *  NAME        : strbuf_clear
  *
  *  DESCRIPTION : Clears the string
  *
@@ -194,11 +186,11 @@ extern bool stringv_blank (stringv_t *str_p);
  *                false otherwise
  *
  *****************************************************************************/
-#define stringv_clear(str_p) stringv_set(str_p, "")
+#define strbuf_clear(str_p) strbuf_set(str_p, "")
 
 /*****************************************************************************
  *
- *  NAME        : stringv_tolower
+ *  NAME        : strbuf_tolower
  *
  *  DESCRIPTION : Convert the given string to lowercase
  *
@@ -207,11 +199,11 @@ extern bool stringv_blank (stringv_t *str_p);
  *  RETURNS     : string in lower case
  *
  *****************************************************************************/
-extern void stringv_tolower (stringv_t *str_p);
+extern void strbuf_tolower (strbuf_t *str_p);
 
 /*****************************************************************************
  *
- *  NAME        : stringv_toupper
+ *  NAME        : strbuf_toupper
  *
  *  DESCRIPTION : Convert the given string to uppercase
  *
@@ -220,11 +212,11 @@ extern void stringv_tolower (stringv_t *str_p);
  *  RETURNS     : string in upper case
  *
  *****************************************************************************/
-extern void stringv_toupper (stringv_t *str_p);
+extern void strbuf_toupper (strbuf_t *str_p);
 
 /*****************************************************************************
  *
- *  NAME        : stringv_compare
+ *  NAME        : strbuf_compare
  *
  *  DESCRIPTION : Compares two strings
  *
@@ -239,14 +231,14 @@ extern void stringv_toupper (stringv_t *str_p);
  *                        and str2_p  = NULL
  *                  0  if     str1_p  = NULL
  *                        and str2_p  = NULL
- *                 +1  if     stringv_length(str1_p) > stringv_length(str2_p)
- *                 -1  if     stringv_length(str1_p) < stringv_length(str2_p)
- *                 +1  if     stringv_length(str1_p) > stringv_length(str2_p)
- *                < 0  if     stringv_length(str1_p) = stringv_length(str2_p)
+ *                 +1  if     strbuf_length(str1_p) > strbuf_length(str2_p)
+ *                 -1  if     strbuf_length(str1_p) < strbuf_length(str2_p)
+ *                 +1  if     strbuf_length(str1_p) > strbuf_length(str2_p)
+ *                < 0  if     strbuf_length(str1_p) = strbuf_length(str2_p)
  *                        and ASCII(str1_p) < ASCII(str2_p)
- *                > 0  if     stringv_length(str1_p) = stringv_length(str2_p)
+ *                > 0  if     strbuf_length(str1_p) = strbuf_length(str2_p)
  *                        and ASCII(str1_p) > ASCII(str2_p)
- *                = 0  if     stringv_length(str1_p) = stringv_length(str2_p)
+ *                = 0  if     strbuf_length(str1_p) = strbuf_length(str2_p)
  *                        and ASCII(str1_p) = ASCII(str2_p)
  *
  * NOTES        : Comparison is done first based on length and then based on
@@ -258,11 +250,11 @@ extern void stringv_toupper (stringv_t *str_p);
  *                If icase_b is false, then case-sensitive comparison is done.
  *
  *****************************************************************************/
-extern int stringv_compare (stringv_t *str1_p, stringv_t *str2_p, long n, bool icase_b);
+extern int strbuf_compare (strbuf_t *str1_p, strbuf_t *str2_p, long n, bool icase_b);
 
 /*****************************************************************************
  *
- *  NAME        : stringv_starts_with
+ *  NAME        : strbuf_starts_with
  *
  *  DESCRIPTION : Check if the given string starts the given prefix
  *
@@ -273,11 +265,11 @@ extern int stringv_compare (stringv_t *str1_p, stringv_t *str2_p, long n, bool i
  *                false otherwise
  *
  *****************************************************************************/
-extern bool stringv_starts_with (stringv_t *str_p, const char *prefix_p);
+extern bool strbuf_starts_with (strbuf_t *str_p, const char *prefix_p);
 
 /*****************************************************************************
  *
- *  NAME        : stringv_ends_with
+ *  NAME        : strbuf_ends_with
  *
  *  DESCRIPTION : Check if the given string ends the given suffix
  *
@@ -288,11 +280,11 @@ extern bool stringv_starts_with (stringv_t *str_p, const char *prefix_p);
  *                false otherwise
  *
  *****************************************************************************/
-extern bool stringv_ends_with (stringv_t *str_p, const char *prefix_p);
+extern bool strbuf_ends_with (strbuf_t *str_p, const char *prefix_p);
 
 /*****************************************************************************
  *
- *  NAME        : stringv_contains
+ *  NAME        : strbuf_contains
  *
  *  DESCRIPTION : Check if the given string contains the given substring
  *
@@ -303,11 +295,11 @@ extern bool stringv_ends_with (stringv_t *str_p, const char *prefix_p);
  *                false otherwise
  *
  *****************************************************************************/
-#define stringv_contains(str_p, substr_p)  (-1 != stringv_find(str_p, 0, substr_p))
+#define strbuf_contains(str_p, substr_p)  (-1 != strbuf_find(str_p, 0, substr_p))
 
 /*****************************************************************************
  *
- *  NAME        : stringv_span
+ *  NAME        : strbuf_span
  *
  *  DESCRIPTION : Calculate the length of the initial segment of the given
  *                string str_p which consists entirely of characters in the
@@ -320,12 +312,12 @@ extern bool stringv_ends_with (stringv_t *str_p, const char *prefix_p);
  *                characters
  *
  *****************************************************************************/
-extern long stringv_span (stringv_t *str_p, const char *accept_p);
+extern long strbuf_span (strbuf_t *str_p, const char *accept_p);
 
 /*****************************************************************************
  *
- *  NAME        : stringv_find
- *                stringv_find_first
+ *  NAME        : strbuf_find
+ *                strbuf_find_first
  *
  *  DESCRIPTION : Find the first occurence of the given substring in the
  *                given string
@@ -337,13 +329,13 @@ extern long stringv_span (stringv_t *str_p, const char *accept_p);
  *  RETURNS     : Position of the substring if found, -1 otherwise
  *
  *****************************************************************************/
-extern long stringv_find (stringv_t *str_p, long pos, const char *substr_p);
-#define stringv_find_first(str_p, substr_p)  stringv_find(str_p, 0, substr_p)
+extern long strbuf_find (strbuf_t *str_p, long pos, const char *substr_p);
+#define strbuf_find_first(str_p, substr_p)  strbuf_find(str_p, 0, substr_p)
 
 /*****************************************************************************
  *
- *  NAME        : stringv_rfind
- *                stringv_find_last
+ *  NAME        : strbuf_rfind
+ *                strbuf_find_last
  *
  *  DESCRIPTION : Find the last occurence of the given substring in the
  *                given string (reverse scan)
@@ -355,37 +347,37 @@ extern long stringv_find (stringv_t *str_p, long pos, const char *substr_p);
  *  RETURNS     : Position of the substring if found, -1 otherwise
  *
  *****************************************************************************/
-extern long stringv_rfind (stringv_t *str_p, long last_pos, const char *substr_p);
-#define stringv_find_last(str_p, substr_p)  stringv_rfind(str_p, stringv_length(str_p) - 1, substr_p)
+extern long strbuf_rfind (strbuf_t *str_p, long last_pos, const char *substr_p);
+#define strbuf_find_last(str_p, substr_p)  strbuf_rfind(str_p, strbuf_length(str_p) - 1, substr_p)
 
 /*****************************************************************************
  *
- *  NAME        : stringv_substr
+ *  NAME        : strbuf_substr
  *
  *  DESCRIPTION : Extract substring from the given string
  *
- *  PARAMS      : in_p  - The input string view
+ *  PARAMS      : in_p  - The input string buffer
  *                pos   - Starting position in the input string
  *                n     - Number of characters to extract.
- *                out_p - The output string view
+ *                out_p - The output string buffer
  *
  *  RETURNS     : Nothing
  * 
  *  NOTES       : No-Op if arguments are invalid
  *                      if pos is out of bounds
  *                empty_str if n = 0
- *                if n < 0 or pos + n > stringv_length(in_p), all characters
+ *                if n < 0 or pos + n > strbuf_length(in_p), all characters
  *                from pos in str_p will be contained in out_p.
  *                otherwise, out_p will start at in_p->s + pos and will have
  *                string length of n.
  *
  *****************************************************************************/
-extern void stringv_substr (stringv_t *in_p, long pos, long n, stringv_t *out_p);
+extern void strbuf_substr (strbuf_t *in_p, long pos, long n, strbuf_t *out_p);
 
 /*****************************************************************************
  *
- *  NAME        : stringv_remove_prefix
- *                stringv_remove_suffix
+ *  NAME        : strbuf_remove_prefix
+ *                strbuf_remove_suffix
  *
  *  DESCRIPTION : Removes the first / last n characters from the given string
  *
@@ -394,21 +386,21 @@ extern void stringv_substr (stringv_t *in_p, long pos, long n, stringv_t *out_p)
  *
  *  RETURNS     : Nothing
  *
- *  NOTES       : No-OP if inputs are invalid or if n > stringv_length(str_p)
- *                If n >= stringv_length(str_p), stringv_remove_suffix will retain
+ *  NOTES       : No-OP if inputs are invalid or if n > strbuf_length(str_p)
+ *                If n >= strbuf_length(str_p), strbuf_remove_suffix will retain
  *                str_p->s at current position but set n to 0 whereas
- *                stringv_remove_prefix will move str_p->s to str_p->s + n and
+ *                strbuf_remove_prefix will move str_p->s to str_p->s + n and
  *                set n to 0.
  *
  *****************************************************************************/
-extern void stringv_remove_prefix (stringv_t *str_p, long n);
-extern void stringv_remove_suffix (stringv_t *str_p, long n);
+extern void strbuf_remove_prefix (strbuf_t *str_p, long n);
+extern void strbuf_remove_suffix (strbuf_t *str_p, long n);
 
 /*****************************************************************************
  *
- *  NAME        : stringv_trim
- *                stringv_trim_leading_ws
- *                stringv_trim_trailing_ws
+ *  NAME        : strbuf_trim
+ *                strbuf_trim_leading_ws
+ *                strbuf_trim_trailing_ws
  *
  *  DESCRIPTION : Trims the given string by removing leading / trailing
  *                whitespaces
@@ -418,13 +410,13 @@ extern void stringv_remove_suffix (stringv_t *str_p, long n);
  *  RETURNS     : Nothing
  *
  *****************************************************************************/
-extern void stringv_trim (stringv_t *str_p);
-extern void stringv_trim_leading_ws (stringv_t *str_p);
-extern void stringv_trim_trailing_ws (stringv_t *str_p);
+extern void strbuf_trim (strbuf_t *str_p);
+extern void strbuf_trim_leading_ws (strbuf_t *str_p);
+extern void strbuf_trim_trailing_ws (strbuf_t *str_p);
 
 
 #if defined(__cplusplus)
 }
 #endif
 
-#endif /*__stringv_H */
+#endif /*__STRBUF_H */
