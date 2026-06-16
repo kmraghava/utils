@@ -742,6 +742,32 @@ long string_span (string_t *str_p, const char *accept_p)
 
 /*****************************************************************************
  *
+ *  NAME        : string_cspan
+ *
+ *  DESCRIPTION : Calculate the length of the initial segment of the given
+ *                string str_p which does not contain characters of the
+ *                given reject string
+ *
+ *  PARAMS      : str_p    - The string
+ *                reject_p - The string containing rejectable characters
+ *
+ *  RETURNS     : Length of the initial segment not containing reject
+ *                characters
+ *
+ *****************************************************************************/
+long string_cspan (string_t *str_p, const char *reject_p)
+{
+    if (!str_p || !str_p->s)
+        return 0;
+
+    if (!reject_p)
+        return 0;
+
+    return strcspn(str_p->s, reject_p);
+}
+
+/*****************************************************************************
+ *
  *  NAME        : string_find
  *
  *  DESCRIPTION : Find the first occurence of the given substring in the

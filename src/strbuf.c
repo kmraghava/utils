@@ -483,7 +483,47 @@ long strbuf_span (strbuf_t *str_p, const char *accept_p)
     if (!accept_p)
         return 0;
 
-    return strspn(str_p->s, accept_p);
+    long  pos;
+
+    for (pos = 0; pos < str_p->slen; pos++) {
+        if (!strchr(accept_p, str_p->s[pos]))
+            break;
+    }
+
+    return pos;
+}
+
+/*****************************************************************************
+ *
+ *  NAME        : strbuf_cspan
+ *
+ *  DESCRIPTION : Calculate the length of the initial segment of the given
+ *                string str_p which does not contain characters of the
+ *                given reject string
+ *
+ *  PARAMS      : str_p    - The string
+ *                reject_p - The string containing rejectable characters
+ *
+ *  RETURNS     : Length of the initial segment not containing reject
+ *                characters
+ *
+ *****************************************************************************/
+long strbuf_cspan (strbuf_t *str_p, const char *reject_p)
+{
+    if (!str_p || !str_p->s)
+        return 0;
+
+    if (!reject_p)
+        return 0;
+
+    long  pos;
+
+    for (pos = 0; pos < str_p->slen; pos++) {
+        if (strchr(reject_p, str_p->s[pos]))
+            break;
+    }
+
+    return pos;
 }
 
 /*****************************************************************************
