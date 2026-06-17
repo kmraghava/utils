@@ -424,12 +424,12 @@ extern void strbuf_remove_suffix (strbuf_t *str_p, long n);
  *
  *  PARAMS      : str_p - The string
  *
- *  RETURNS     : Nothing
+ *  RETURNS     : Number of characters removed
  *
  *****************************************************************************/
-extern void strbuf_trim (strbuf_t *str_p);
-extern void strbuf_trim_leading_ws (strbuf_t *str_p);
-extern void strbuf_trim_trailing_ws (strbuf_t *str_p);
+extern long strbuf_trim (strbuf_t *str_p);
+extern long strbuf_trim_leading_ws (strbuf_t *str_p);
+extern long strbuf_trim_trailing_ws (strbuf_t *str_p);
 
 
 #if defined(__cplusplus)

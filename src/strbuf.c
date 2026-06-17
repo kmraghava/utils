@@ -706,42 +706,69 @@ void strbuf_remove_suffix (strbuf_t *str_p, long n)
  *
  *  PARAMS      : str_p - The string
  *
- *  RETURNS     : Nothing
+ *  RETURNS     : Number of characters removed
  *
  *****************************************************************************/
-void strbuf_trim (strbuf_t *str_p)
+long strbuf_trim (strbuf_t *str_p)
 {
-    strbuf_trim_leading_ws(str_p);
-    strbuf_trim_trailing_ws(str_p);
+    long  count;
+
+    count  = strbuf_trim_leading_ws(str_p);
+    count += strbuf_trim_trailing_ws(str_p);
+
+    return count;
 }
-void strbuf_trim_leading_ws (strbuf_t *str_p)
+long strbuf_trim_leading_ws (strbuf_t *str_p)
 {
     if (!str_p || !str_p->s || str_p->slen == 0)
-        return;
+        return 0;
 
     long  i = 0;
+
     while (   i < str_p->slen
-           && (str_p->s[i] == ' ' || str_p->s[i] == '\t' || str_p->s[i] == '\n')
+           && (   str_p->s[i] == ' '    // space
+               || str_p->s[i] == '\t'   // horizontal tab
+               || str_p->s[i] == '\v'   // vertical tab
+               || str_p->s[i] == '\f'   // form feed
+               || str_p->s[i] == '\r'   // carriage return
+               || str_p->s[i] == '\n'   // newline
+              )
           )
     {
-        str_p->s++;
-        str_p->slen--;
-
         i++;
     }
+    if (i > 0)
+    {
+        str_p->s += i;
+        str_p->slen -= i;
+    }
+
+    return i;
 }
-void strbuf_trim_trailing_ws (strbuf_t *str_p)
+long strbuf_trim_trailing_ws (strbuf_t *str_p)
 {
     if (!str_p || !str_p->s || str_p->slen == 0)
-        return;
+        return 0;
 
-    long  i = str_p->slen - 1;
-    while (   str_p->slen > 0
-           && (str_p->s[i] == ' ' || str_p->s[i] == '\t' || str_p->s[i] == '\n')
+    long  i = 0;
+
+    while (   i < str_p->slen
+           && (   str_p->s[str_p->slen - 1 - i] == ' '    // space
+               || str_p->s[str_p->slen - 1 - i] == '\t'   // horizontal tab
+               || str_p->s[str_p->slen - 1 - i] == '\v'   // vertical tab
+               || str_p->s[str_p->slen - 1 - i] == '\f'   // form feed
+               || str_p->s[str_p->slen - 1 - i] == '\r'   // carriage return
+               || str_p->s[str_p->slen - 1 - i] == '\n'   // newline
+              )
           )
     {
-        str_p->slen--;
-        i--;
+        i++;
     }
+    if (i > 0)
+    {
+        str_p->slen -= i;
+    }
+
+    return i;
 }
 
