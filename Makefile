@@ -45,7 +45,7 @@ objects := $(patsubst %.c, $(build_dir)/%.o, $(sources))
 all: $(lib_name).so $(lib_name).a
 
 $(lib_name).so: $(objects)
-	$(CC) -shared -o $@ $^
+	$(CC) -shared -o $@ $^ -ljansson
 
 $(lib_name).a: $(objects)
 	$(AR) rcs $@ $^
