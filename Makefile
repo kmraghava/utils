@@ -28,11 +28,13 @@ DEFINES :=
 includes := -Iinclude
 
 # Source files
-sources := $(src_dir)/clist.c \
+sources := $(src_dir)/app_timer.c \
+		   $(src_dir)/clist.c \
 		   $(src_dir)/ctree.c \
 		   $(src_dir)/json_field.c \
 		   $(src_dir)/logger.c \
 		   $(src_dir)/mac_addr.c \
+		   $(src_dir)/msg_queue.c \
 		   $(src_dir)/tree.c \
 		   $(src_dir)/str.c \
 		   $(src_dir)/strbuf.c \
